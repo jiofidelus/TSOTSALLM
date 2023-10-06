@@ -8,6 +8,7 @@ import torch
 from huggingface_hub import login
 from transformers import LlamaTokenizer
 from llama_recipes.inference.model_utils import load_model, load_peft_model
+from dotenv import load_dotenv
 
 torch.set_float32_matmul_precision("high")
 
@@ -24,10 +25,10 @@ app = FastAPI()
 logger = logging.getLogger(__name__)
 # Configure the logging module
 logging.basicConfig(level=logging.INFO)
-
+load_dotenv()
 login(token=os.environ["HUGGINGFACE_TOKEN"])
 
-model = load_model('meta-llama/Llama-2-7b-hf', True)
+model = load_model('meta-llama/Llama-2-7b-hf', False)
 model = load_peft_model(model, os.environ["HUGGINGFACE_REPO"])
 
 model.eval()
