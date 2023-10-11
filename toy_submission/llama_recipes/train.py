@@ -352,7 +352,7 @@ def main1():
     # trainer.save_metrics()
 
     # save_model in local
-    model = trainer.save_model()
+    trainer.save_model()
 
     """# Merge the model and adpater and save it
 
