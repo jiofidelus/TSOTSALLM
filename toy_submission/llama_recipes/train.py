@@ -202,7 +202,7 @@ def main1():
     # # Load the enviroment variables
     load_dotenv()
     # Login to the Hugging Face Hub
-    login(token=os.getenv("HF_HUB_TOKEN"))
+    login(token="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")
 
     # @title load dataset with instructions
     train_data = load_dataset(dataset_name, split=dataset_split)
