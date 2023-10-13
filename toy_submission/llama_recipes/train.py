@@ -59,39 +59,39 @@ from trl import SFTTrainer
 from torch.utils.data import DataLoader, Dataset
 import argparse,time
 
-# def argsparser():
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument("--model-name", type=str, required=True,help="Name of the base model")
-#     parser.add_argument("--dataset", type=str, default="GAIR/lima", help="dataset used to train model")
-#     parser.add_argument("--split", type=str, default="train[:10%]")
-#     parser.add_argument("--hf_rep", type=str, required=True, help="HuggingFace repository")
-#     parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate that allow to ajust model weight")
-#     parser.add_argument("--epochs", type=int, default=2, help="chunk data to train it")
-#     parser.add_argument("--fine-tuned-model-name", type=str, required=True, help="name of the fine-tuned model")
-#     parser.add_argument('--bf16', action='store_true', default=True if th.cuda.get_device_capability()[0] == 8 else False,)
-#     parser.add_argument(
-#         "--per_device_train_batch_size",
-#         type=int,
-#         default=1,
-#         help="Batch size to use for training.",
-#     )
-#     parser.add_argument(
-#         "--seed", type=int, default=42, help="Seed to use for training."
-#     )
-#     parser.add_argument(
-#         "--gradient_checkpointing",
-#         type=bool,
-#         default=True,
-#         help="Path to deepspeed config file.",
-#     )
-#     parser.add_argument(
-#         "--merge_weights",
-#         type=bool,
-#         default=True,
-#         help="Whether to merge LoRA weights with base model.",
-#     )
-#     args= parser.parse_args()
-#     return args
+def argsparser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-name", type=str, required=True,help="Name of the base model")
+    parser.add_argument("--dataset", type=str, default="GAIR/lima", help="dataset used to train model")
+    parser.add_argument("--split", type=str, default="train[:10%]")
+    parser.add_argument("--hf_rep", type=str, required=True, help="HuggingFace repository")
+    parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate that allow to ajust model weight")
+    parser.add_argument("--epochs", type=int, default=2, help="chunk data to train it")
+    parser.add_argument("--fine-tuned-model-name", type=str, required=True, help="name of the fine-tuned model")
+    parser.add_argument('--bf16', action='store_true', default=True if th.cuda.get_device_capability()[0] == 8 else False)
+    parser.add_argument(
+        "--per_device_train_batch_size",
+        type=int,
+        default=1,
+        help="Batch size to use for training.",
+    )
+    parser.add_argument(
+        "--seed", type=int, default=42, help="Seed to use for training."
+    )
+    parser.add_argument(
+        "--gradient_checkpointing",
+        type=bool,
+        default=True,
+        help="Path to deepspeed config file.",
+    )
+    parser.add_argument(
+        "--merge_weights",
+        type=bool,
+        default=True,
+        help="Whether to merge LoRA weights with base model.",
+    )
+    args= parser.parse_args()
+    return args
 
 def main1():
     parser = argparse.ArgumentParser()

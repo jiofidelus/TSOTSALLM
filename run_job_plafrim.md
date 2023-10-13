@@ -66,6 +66,10 @@ cd TSOTSALLM
 ### create virtual environment 
 
 ```
+pip install virtualenv
+```
+
+```
 python3 -m venv env
 ```
 
