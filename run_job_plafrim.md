@@ -100,7 +100,7 @@ paste these instructions inside
 #SBATCH --gres=gpu:a100:1  # using A100 GPU
 
 # start training
-python toy_submission/llama_recipes/train.py --model-name NousResearch/Llama-2-7b-hf --hf_rep yvelos/Tsotsallm --fine-tuned-model-name Tsotsallm  --epochs 1 --bf16 --train [:40%]
+python toy_submission/llama_recipes/train.py --model-name NousResearch/Llama-2-7b-hf --hf_rep yvelos/Tsotsallm --fine-tuned-model-name Tsotsallm  --epochs 1 --bf16 --split train
 ```
 ### Submit the Job
  
