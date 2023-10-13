@@ -94,16 +94,8 @@ def argsparser():
     return args
 
 def main1():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model-name", type=str, required=True)
-    parser.add_argument("--dataset", type=str, default="GAIR/lima")
-    parser.add_argument("--split", type=str, default="train[:60%]")
-    parser.add_argument("--hf_rep", type=str, required=True)
-    parser.add_argument("--lr", type=float, default=2e-4)
-    parser.add_argument("--epochs", type=int, default=3)
-    parser.add_argument("--fine-tuned-model-name", type=str, required=True)
-    parser.add_argument('--bf16', action='store_true')
-    args= parser.parse_args()
+    
+    args = argsparser()
     
     # @title GLobal parameters setting
 
