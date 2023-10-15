@@ -1,12 +1,12 @@
 import os
 from dotenv import load_dotenv
-from huggingface_hub import login, HfApi 
+from huggingface_hub import login, HfApi
 # from llama_recipes.finetuning import main as finetuning
 
 # def main():
 #     load_dotenv()
 #     login(token=os.environ["HUGGINGFACE_TOKEN"])
-    
+
 #     kwargs = {
 #         "model_name": "meta-llama/Llama-2-7b-hf",
 #         "use_peft": True,
@@ -17,21 +17,21 @@ from huggingface_hub import login, HfApi
 #         "custom_dataset.file": "./custom_dataset.py",
 #         "output_dir": "./output_dir ",
 #     }
-    
+
 #     finetuning(**kwargs)
 
-#     api = HfApi() 
+#     api = HfApi()
 
-#     api.upload_folder( 
-#         folder_path='./output_dir/', 
-#         repo_id=os.environ["HUGGINGFACE_REPO"], 
-#         repo_type='model', 
+#     api.upload_folder(
+#         folder_path='./output_dir/',
+#         repo_id=os.environ["HUGGINGFACE_REPO"],
+#         repo_type='model',
 #     )
 
 # if __name__ == "__main__":
 #     main()
-    
-    
+
+
 # -*- coding: utf-8 -*-
 """Neurips_efficiency_LLM_challenge.ipynb
 
@@ -55,19 +55,28 @@ import torch as th
 from peft import LoraConfig, prepare_model_for_kbit_training, get_peft_model, AutoPeftModelForCausalLM
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, TrainingArguments
 from trl import SFTTrainer
-import argparse,time
+import argparse
+import time
 from dataset import TsotsaDataset
+
 
 def argsparser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-name", type=str, required=True,help="Name of the base model")
-    parser.add_argument("--dataset", type=str, default="GAIR/lima", help="dataset used to train model")
+    parser.add_argument("--model-name", type=str,
+                        required=True, help="Name of the base model")
+    parser.add_argument("--dataset", type=str,
+                        default="GAIR/lima", help="dataset used to train model")
     parser.add_argument("--split", type=str, default="train[:10%]")
-    parser.add_argument("--hf_rep", type=str, required=True, help="HuggingFace repository")
-    parser.add_argument("--lr", type=float, default=2e-15, help="Learning rate that allow to ajust model weight")
-    parser.add_argument("--epochs", type=int, default=2, help="chunk data to train it")
-    parser.add_argument("--output_dir", type=str, required=True, help="name of the fine-tuned model")
-    parser.add_argument('--bf16', action='store_true', default=True if th.cuda.get_device_capability()[0] == 8 else False)
+    parser.add_argument("--hf_rep", type=str, required=True,
+                        help="HuggingFace repository")
+    parser.add_argument("--lr", type=float, default=2e-15,
+                        help="Learning rate that allow to ajust model weight")
+    parser.add_argument("--epochs", type=int, default=2,
+                        help="chunk data to train it")
+    parser.add_argument("--output_dir", type=str, required=True,
+                        help="name of the fine-tuned model")
+    parser.add_argument('--bf16', action='store_true',
+                        default=True if th.cuda.get_device_capability()[0] == 8 else False)
     parser.add_argument(
         "--per_device_train_batch_size",
         type=int,
@@ -89,12 +98,13 @@ def argsparser():
         default=True,
         help="Whether to merge LoRA weights with base model.",
     )
-    args= parser.parse_args()
+    args = parser.parse_args()
     return args
 
+
 def loginHub():
-     # @title Login on hugging face
-    from huggingface_hub import login,notebook_login
+    # @title Login on hugging face
+    from huggingface_hub import login, notebook_login
     from dotenv import load_dotenv
     # notebook_login()
 
@@ -107,19 +117,21 @@ def loginHub():
     # Login to the Hugging Face Hub
     login(token="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")
     return login
+
+
 loginHub()
 
-tsotsa = TsotsaDataset()
+tsotsa = TsotsaDataset(argsparser().split)
 
 
 def train_model(model_id, dataset, dataset_type):
     args = argsparser()
-    
+
     model_id = model_id
     new_model = args.output_dir
     hf_model_rep = args.hf_rep
-    device_map = {'':0}
-    
+    device_map = {'': 0}
+
     """
     bitsandBytes parameters
     """
@@ -129,7 +141,7 @@ def train_model(model_id, dataset, dataset_type):
     # Compute dtype for 4-bit base models
     bnb_4bits_compute_dtype = "float16"
     # quantisation type
-    bnb_4bits_quan_type = "nf4" #  we can use nf4 of fp4
+    bnb_4bits_quan_type = "nf4"  # we can use nf4 of fp4
     # activation nested quantization for 4-bits base model (double quantization)
     use_double_quant_nested = False
 
@@ -161,7 +173,7 @@ def train_model(model_id, dataset, dataset_type):
     # Maximum gradient normal (gradient clipping)
     max_grad_norm = 0.3
     # Initial learning rate (AdamW optimizer)
-    learning_rate = 2e-4 #1e-5
+    learning_rate = 2e-4  # 1e-5
     # Weight decay to apply to all layers except bias/LayerNorm weights
     weight_decay = 0.001
     # Optimizer to use
@@ -179,25 +191,24 @@ def train_model(model_id, dataset, dataset_type):
     # Log every X updates steps
     logging_steps = 25
     # Disable tqdm
-    disable_tqdm= True
-    
+    disable_tqdm = True
+
     """
     SFTTrainer parameters
     """
     # Maximum sequence length to use
     max_seq_length = 2048
     # Pack multiple short examples in the same input sequence to increase efficiency
-    packing = True #False
+    packing = True  # False
 
     # @title load dataset with instructions
     train_data = dataset
-    
-    
+
     """# fine-tune a Llama 2 model using trl and the SFTTrainer
 
     to fine tuning our model, we need to convert our structured example of tasks by instructions. we define a formating function that take as inputs a sample and return string with our function format
     """
-    
+
     # @title Using QLoRA technique to reduce memory footprint during the fine-tuning
     # get the type
     compute_dtype = getattr(th, bnb_4bits_compute_dtype)
@@ -207,20 +218,21 @@ def train_model(model_id, dataset, dataset_type):
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=use_4bits,
         bnb_4bit_use_double_quant=use_double_quant_nested,
-        bnb_4bit_quant_type= bnb_4bits_quan_type,
+        bnb_4bit_quant_type=bnb_4bits_quan_type,
         bnb_4bits_compute_dtype=compute_dtype
     )
-    
+
     # @title Load the pre-trained model
-    model = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=bnb_config, use_cache=False, device_map=device_map)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id, quantization_config=bnb_config, use_cache=False, device_map=device_map)
     model.config.pretraining_tp = 1
-    
+
     # @title Load the tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
     tokenizer.name_or_path
-    
+
     # @title Lora config based on Qlora paper
     """
     The SFTTrainer supports a native integration with peft, which makes it
@@ -259,8 +271,8 @@ def train_model(model_id, dataset, dataset_type):
         seed=args.seed
 
     )
-    
-    """Before we can start our training, we need to define the hypersparemeters In a TrainingArgument object we want to use"""    
+
+    """Before we can start our training, we need to define the hypersparemeters In a TrainingArgument object we want to use"""
     # @title Create a Trainer
     """
     We now have every building block we need to create our SFTTrainer to start then training our model.
@@ -275,8 +287,8 @@ def train_model(model_id, dataset, dataset_type):
         formatting_func=dataset_type,
         args=args_training
     )
-    
-     # @title Start Training
+
+    # @title Start Training
     """
     Start training our model by calling the train() method on our Trainer instance.
     """
@@ -284,7 +296,7 @@ def train_model(model_id, dataset, dataset_type):
     print("Start Training", start_time)
     trainer.train()
     print(f"Total training time {(time.time() - start_time) / 60:.2f} min")
-    
+
     # save metrics
     # trainer.save_metrics()
 
@@ -316,7 +328,7 @@ def train_model(model_id, dataset, dataset_type):
     )
     new_model.push_to_hub("yvelos/Tsotsallm-adapter")
     model = args.output_dir
-    
+
     return model
 
     # @title Merge LoRa and Base Model
@@ -334,8 +346,10 @@ def train_model(model_id, dataset, dataset_type):
 def main1():
     args = argsparser()
     datateset = tsotsa._load_lima()
-    train_model(dataset=datateset, model_id=args.model_name, dataset_type=tsotsa.prepare_bbq_scenario)
+    train_model(dataset=datateset, model_id=args.model_name,
+                dataset_type=tsotsa.prepare_bbq_scenario)
+
 
 if __name__ == "__main__":
-    
-  main1()
+
+    main1()

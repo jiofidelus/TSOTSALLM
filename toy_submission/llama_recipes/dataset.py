@@ -1,132 +1,93 @@
 from datasets import load_dataset
 from random import randrange
-import pandas as pd, os, csv, json
+import pandas as pd
+import os
+import csv
+import json
 import nltk
 from bs4 import BeautifulSoup
 
 path = f'{os.getcwd()}/toy_submission/llama_recipes/data'
 
+
 class TsotsaDataset:
-    def __init__(self):
+    def __init__(self, split="train"):
         self.dataset = []
         self.dataset_id = ""
-        
+        self.split = split
+
     # get size of the dataset
-    
+
     def __len__(self):
         return len(self.dataset)
     """_
         BIG Bench Scenario
     """
-    # load lima dataset 
+    # load lima dataset
+
     def _load_lima(self):
         self.dataset_id = "GAIR/lima"
-        self.dataset = load_dataset(self.dataset_id, split="train")
-        # with open(f"{path}/BBQ/lima.csv", "w+") as f:
-        #     writer = csv.writer(f)
-            
-        #     # write header file
-        #     writer.writerow(["instruction", "response", "source"])
-        #     for data in self.dataset:
-        #         writer.writerow([data['conversations'][0], data['conversations'][1], data['source']])
-        # self.dataset = pd.read_csv(f"{path}/BBQ/lima.csv")
+        self.dataset = load_dataset(self.dataset_id, split=self.split)
         return self.dataset
-    
+
     # load databricks dataset
-    def _load_dolly(self):        
+    def _load_dolly(self):
         self.dataset_id = "databricks/databricks-dolly-15k"
-        self.dataset = load_dataset(self.dataset_id, split="train[:15%]")     
-        with open(f"{path}/BBQ/dolly.csv", "w+") as f:
-            writer = csv.writer(f)
-            header = ["question", "response", "context", "category"]
-            # write header file
-            writer.writerow(header)
-            for data in self.dataset:
-                writer.writerows([data.values()])
-        self.dataset = pd.read_csv(f"{path}/BBQ/dolly.csv") 
+        self.dataset = load_dataset(self.dataset_id, split=self.split)
         return self.dataset
-    
+
     # load oasst1 dataset
     def _load_oasst1(self):
-        # self.dataset_id = "OpenAssistant/oasst1"
-        # self.dataset = load_dataset(self.dataset_id, split="train")
-        
-        # with open(f"{path}/BBQ/oasst1.csv", "w+") as f:
-        #     writer = csv.writer(f)
-            
-        #     # write header file
-        #     writer.writerow(self.dataset.column_names)
-        #     for data in self.dataset:
-        #         writer.writerows([data.values()])
-        
-        self.dataset = pd.read_csv(f"{path}/BBQ/oasst1.csv")
-        
+        self.dataset_id = "OpenAssistant/oasst1"
+        self.dataset = load_dataset(self.dataset_id, split=self.split)
+
         return self.dataset
-    
+
     # summerization dataset
     def _load_redpajama(self):
         self.dataset_id = "togethercomputer/RedPajama-Data-1T"
-        self.dataset = load_dataset(self.dataset_id, split="train[:20%]", name="arxiv")
+        self.dataset = load_dataset(
+            self.dataset_id, split=self.split, name="arxiv")
         return self.dataset
-    
+
     """_
         truthfullqa Scenario
     """
-    # truthfullqa dataset    
+    # truthfullqa dataset
+
     def _load_ai2_arc(self):
         self.dataset_id = "ai2_arc"
-        self.dataset = load_dataset(self.dataset_id, split="train", name="ARC-Easy")
-        
-        # with open(f"{path}/TruthfulQA/ai2_arc.csv", "w+") as f:
-        #     writer = csv.writer(f)
-            
-        #     # write header file
-        #     writer.writerow(self.dataset.column_names)
-        #     for data in self.dataset:
-        #         writer.writerows([data.values()])
-        
-        # self.dataset = pd.read_csv(f"{path}/TruthfulQA/ai2_arc.csv")
-        
-        
+        self.dataset = load_dataset(
+            self.dataset_id, split=self.split, name="ARC-Easy")
+
         return self.dataset
-    
+
     # truthfullqa dataset
     def _load_commonsense_qa(self):
         self.dataset_id = "commonsense_qa"
-        self.dataset = load_dataset(self.dataset_id, split="train")
-        
-        # with open(f"{path}/TruthfulQA/commense_qa.csv", "w+") as f:
-        #     writer = csv.writer(f)
-            
-        #     # write header file
-        #     writer.writerow(self.dataset.column_names)
-        #     for data in self.dataset:
-        #         writer.writerows([data.values()])
-        
-        # self.dataset = pd.read_csv(f"{path}/TruthfulQA/commense_qa.csv")
-        
+        self.dataset = load_dataset(self.dataset_id, split=self.split)
         return self.dataset
-    
+
     """ 
         formating function for each type of scenarios
     """
-    
+
     def prepare_bbq_scenario(self, sample):
-        
-        if 'question' or 'response' in sample:
+
+        if 'instruction' in sample:
             string = f"""
                 ### Welcome in your assistant!!!!!!!
                 
                 ### INSTRUCTIONS:
-                {sample['question']}
+                {sample['instruction']}
                 
                 ### Answer
                 {sample['response']}
             """
-        else:
-            instruction = sample['conversation'][0]
-            response = sample['conversation'][1]
-        
+        elif 'conversations' in sample:
+            instruction = sample['conversations'][0]
+            response = sample['conversations'][1]
+
             string = f"""
                 ### Welcome in your assistant!!!!!!!
                 
@@ -139,9 +100,9 @@ class TsotsaDataset:
 
             """
         return string
-    
+
     def prepare_truthfulqa_scenario(self, sample):
-        sample_dict = eval(sample['choices'])
+        sample_dict = sample['choices']
         text_list = sample_dict['text']
         label_list = sample_dict['label']
         formatted_list = []
@@ -162,8 +123,7 @@ class TsotsaDataset:
         """
         print(string)
         return string
-    
-    
+
     def prepare_summerization_scenario(self, sample):
         string = f"""
             ### Welcome in your assistant!!!!!!!
@@ -179,8 +139,7 @@ class TsotsaDataset:
         """
         print(string)
         return string
-    
-    
+
 
 # tsotsa = TsotsaDataset()
 
@@ -201,5 +160,3 @@ class TsotsaDataset:
 # print(tsotsa._load_databricks())
 # print(tsotsa._load_oasst1())
 # print(tsotsa._load_redpajama())
-
-
