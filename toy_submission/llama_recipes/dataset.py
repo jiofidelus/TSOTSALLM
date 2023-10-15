@@ -20,27 +20,27 @@ class TsotsaDataset:
     """
     # load lima dataset 
     def _load_lima(self):
-        self.dataset_id = "GAIR/lima"
-        self.dataset = load_dataset(self.dataset_id, split="train")
-        with open(f"{path}/BBQ/lima.csv", "w+") as f:
-            writer = csv.writer(f)
+        # self.dataset_id = "GAIR/lima"
+        # self.dataset = load_dataset(self.dataset_id, split="train")
+        # with open(f"{path}/BBQ/lima.csv", "w+") as f:
+        #     writer = csv.writer(f)
             
-            # write header file
-            writer.writerow(["instruction", "response", "source"])
-            for data in self.dataset:
-                writer.writerow([data['conversations'][0], data['conversations'][1], data['source']])
+        #     # write header file
+        #     writer.writerow(["instruction", "response", "source"])
+        #     for data in self.dataset:
+        #         writer.writerow([data['conversations'][0], data['conversations'][1], data['source']])
         self.dataset = pd.read_csv(f"{path}/BBQ/lima.csv")
         return self.dataset
     
     # load databricks dataset
     def _load_dolly(self):        
         self.dataset_id = "databricks/databricks-dolly-15k"
-        self.dataset = load_dataset(self.dataset_id, split="train")     
+        self.dataset = load_dataset(self.dataset_id, split="train[:15%]")     
         with open(f"{path}/BBQ/dolly.csv", "w+") as f:
             writer = csv.writer(f)
-            
+            header = ["question", "response", "context", "category"]
             # write header file
-            writer.writerow(self.dataset.column_names)
+            writer.writerow(header)
             for data in self.dataset:
                 writer.writerows([data.values()])
         self.dataset = pd.read_csv(f"{path}/BBQ/dolly.csv") 
@@ -117,11 +117,11 @@ class TsotsaDataset:
             
             ### INSTRUCTIONS:
             
-            {sample['instruction']}
+            {sample[0]}
 
 
             ### Answer
-            {sample['response']}
+            {sample[1]}
 
         """
         print(string)
@@ -157,11 +157,11 @@ class TsotsaDataset:
             
             ### INSTRUCTIONS:
             
-            {sample['instruction']}
+            {sample[0]}
 
 
             ### Answer
-            {sample['response']}
+            {sample[1]}
 
         """
         print(string)
