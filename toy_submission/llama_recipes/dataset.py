@@ -121,20 +121,20 @@ class TsotsaDataset:
     
     
 
-tsotsa = TsotsaDataset()
+# tsotsa = TsotsaDataset()
 
 # print(tsotsa._load_lima())
 
 # BBQ dataset
-dataset_lima = tsotsa._load_lima()
-dataset_dolly = tsotsa._load_dolly()
+# dataset_lima = tsotsa._load_lima()
+# dataset_dolly = tsotsa._load_dolly()
 # tsotsa.prepare_bbq_scenario(dataset_lima[randrange(len(dataset_lima))])
 # tsotsa.prepare_bbq_scenario(dataset_dolly[randrange(len(dataset_dolly))])
 
 # TruthfulQA dataset
-ai2_arc_dataset = tsotsa._load_ai2_arc()
-com_qa_dataset = tsotsa._load_commonsense_qa()
-tsotsa.prepare_truthfulqa_scenario(ai2_arc_dataset[randrange(len(ai2_arc_dataset))])
+# ai2_arc_dataset = tsotsa._load_ai2_arc()
+# com_qa_dataset = tsotsa._load_commonsense_qa()
+# tsotsa.prepare_truthfulqa_scenario(ai2_arc_dataset[randrange(len(ai2_arc_dataset))])
 
 
 # print(tsotsa._load_databricks())

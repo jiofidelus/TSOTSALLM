@@ -108,6 +108,8 @@ def loginHub():
     login(token="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")
     return login
 
+loginHub()
+
 tsotsa = TsotsaDataset()
 
 
@@ -333,7 +335,7 @@ def train_model(model_id, dataset_name, dataset_split):
 
 
 def main1():
-    args = argparse()
+    args = argsparser()
     datateset = tsotsa._load_lima()
     train_model(dataset_name=datateset, model_id=args.model_name, dataset_split="train[:20%]")
 
