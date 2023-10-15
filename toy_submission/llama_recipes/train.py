@@ -55,9 +55,8 @@ import torch as th
 from peft import LoraConfig, prepare_model_for_kbit_training, get_peft_model, AutoPeftModelForCausalLM
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, TrainingArguments
 from trl import SFTTrainer
-
-from torch.utils.data import DataLoader, Dataset
 import argparse,time
+from dataset import TsotsaDataset
 
 def argsparser():
     parser = argparse.ArgumentParser()
@@ -65,9 +64,9 @@ def argsparser():
     parser.add_argument("--dataset", type=str, default="GAIR/lima", help="dataset used to train model")
     parser.add_argument("--split", type=str, default="train[:10%]")
     parser.add_argument("--hf_rep", type=str, required=True, help="HuggingFace repository")
-    parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate that allow to ajust model weight")
+    parser.add_argument("--lr", type=float, default=2e-15, help="Learning rate that allow to ajust model weight")
     parser.add_argument("--epochs", type=int, default=2, help="chunk data to train it")
-    parser.add_argument("--fine-tuned-model-name", type=str, required=True, help="name of the fine-tuned model")
+    parser.add_argument("--output_dir", type=str, required=True, help="name of the fine-tuned model")
     parser.add_argument('--bf16', action='store_true', default=True if th.cuda.get_device_capability()[0] == 8 else False)
     parser.add_argument(
         "--per_device_train_batch_size",
@@ -93,31 +92,35 @@ def argsparser():
     args= parser.parse_args()
     return args
 
-def main1():
-    
+def loginHub():
+     # @title Login on hugging face
+    from huggingface_hub import login,notebook_login
+    from dotenv import load_dotenv
+    # notebook_login()
+
+    # @title Load environments variables
+    # from dotenv import load_dotenv
+    import os
+
+    # # Load the enviroment variables
+    load_dotenv()
+    # Login to the Hugging Face Hub
+    login(token="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")
+    return login
+
+tsotsa = TsotsaDataset()
+
+
+def train_model(model_id, dataset_name, dataset_split):
     args = argsparser()
     
-    # @title GLobal parameters setting
-
-    """
-        HuggingFace configuration
-    """
-    # import model you want to train from hugging face
-    model_id = args.model_name
-
-    # dataset name
-    dataset_name = args.dataset
-
-    # dataset_split
-    dataset_split = args.split
-    # fine tune model name
+    model_id = model_id
+    dataset_name = dataset_name
+    dataset_split = dataset_split
     new_model = args.fine_tuned_model_name
-    # HuggingFace repository
     hf_model_rep = args.hf_rep
-    # Load the entire model on the GPU 0
-    # device_map = th.device('cuda' if th.cuda.is_available() else 'cpu')
     device_map = {'':0}
-
+    
     """
     bitsandBytes parameters
     """
@@ -150,7 +153,6 @@ def main1():
     N_EPOCHS = 1
     # Enable fp16/bf16 training
     fp16 = False
-    bf16 = True
     # Batch size per GPU for training
     per_device_train_batch_size = 1
     # Number of update steps to accumulate the gradients
@@ -179,7 +181,7 @@ def main1():
     logging_steps = 25
     # Disable tqdm
     disable_tqdm= True
-
+    
     """
     SFTTrainer parameters
     """
@@ -188,68 +190,16 @@ def main1():
     # Pack multiple short examples in the same input sequence to increase efficiency
     packing = True #False
 
-    device_map
-
-    # @title Login on hugging face
-    from huggingface_hub import login,notebook_login
-    from dotenv import load_dotenv
-    # notebook_login()
-
-    # @title Load environments variables
-    # from dotenv import load_dotenv
-    import os
-
-    # # Load the enviroment variables
-    load_dotenv()
-    # Login to the Hugging Face Hub
-    login(token="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")
-
     # @title load dataset with instructions
     train_data = load_dataset(dataset_name, split=dataset_split)
-    test_data = load_dataset(dataset_name, split="test")
-    
-    train_data_size = len(train_data)
-    test_data_size = len(test_data)
-    print("Train data size", train_data_size, "\n Test data size: ", test_data_size)
     
     
-    # displays an example
-    # dataset[randrange(dataset_size)]
-
-    for i in train_data[randrange(train_data_size)]['conversations']:
-        print(i,"\n")
-        print("size: ", len(train_data[randrange(train_data_size)]['conversations']))
-
-    # Check the dataset structure
-    train_data, test_data
-
     """# fine-tune a Llama 2 model using trl and the SFTTrainer
 
     to fine tuning our model, we need to convert our structured example of tasks by instructions. we define a formating function that take as inputs a sample and return string with our function format
     """
-
-    # @title fine-tune a Llama 2 model using trl and the SFTTrainer
-    def format_instruction(sample):
-        question = sample['conversations'][0]
-        response = sample['conversations'][1]
-        string = f"""
-            ### User:
-            {question}
-
-            ### Assistant
-            {response}
-
-            ### Source
-            {sample['source']}
-
-        """
-        return string
-
-    # Show a formatted instruction
-    print(format_instruction(train_data[randrange(len(train_data))]))
-
+    
     # @title Using QLoRA technique to reduce memory footprint during the fine-tuning
-
     # get the type
     compute_dtype = getattr(th, bnb_4bits_compute_dtype)
     print(compute_dtype)
@@ -261,18 +211,17 @@ def main1():
         bnb_4bit_quant_type= bnb_4bits_quan_type,
         bnb_4bits_compute_dtype=compute_dtype
     )
-    # bnb_config.bnb_4bit_use_double_quant
-
+    
     # @title Load the pre-trained model
     model = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=bnb_config, use_cache=False, device_map=device_map)
     model.config.pretraining_tp = 1
-
+    
     # @title Load the tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
     tokenizer.name_or_path
-
+    
     # @title Lora config based on Qlora paper
     """
     The SFTTrainer supports a native integration with peft, which makes it
@@ -286,12 +235,8 @@ def main1():
         bias="none",
         task_type="CAUSAL_LM"
     )
-    peft_config
-
-    """Before we can start our training, we need to define the hypersparemeters In a TrainingArgument object we want to use"""
-
     # @title Define parameters in TrainingArguments
-    args = TrainingArguments(
+    args_training = TrainingArguments(
         output_dir=ouput_dir,
         num_train_epochs=N_EPOCHS,
         per_device_train_batch_size=per_device_train_batch_size,
@@ -304,7 +249,7 @@ def main1():
         learning_rate=learning_rate,
         weight_decay=weight_decay,
         fp16=fp16,
-        # bf16=bf16,
+        bf16=args.bf16,
         max_grad_norm=max_grad_norm,
         warmup_ratio=warmup_ratio,
         max_steps=max_steps,
@@ -312,10 +257,11 @@ def main1():
         lr_scheduler_type=lr_scheduler_type,
         # disable_tqdm=disable_tqdm,
         report_to="tensorboard",
-        seed=42
+        seed=args.seed
 
     )
-
+    
+    """Before we can start our training, we need to define the hypersparemeters In a TrainingArgument object we want to use"""    
     # @title Create a Trainer
     """
     We now have every building block we need to create our SFTTrainer to start then training our model.
@@ -327,11 +273,11 @@ def main1():
         max_seq_length=max_seq_length,
         tokenizer=tokenizer,
         packing=packing,
-        formatting_func=format_instruction,
+        formatting_func=tsotsa.prepare_bbq_scenario,
         args=args
     )
-
-    # @title Start Training
+    
+     # @title Start Training
     """
     Start training our model by calling the train() method on our Trainer instance.
     """
@@ -370,40 +316,26 @@ def main1():
         device_map=device_map
     )
     new_model.push_to_hub("yvelos/Tsotsallm-adapter")
+    model = args.output_dir
+    
+    return model
 
     # @title Merge LoRa and Base Model
-    merged_model = new_model.merge_and_unload()
+    # merged_model = new_model.merge_and_unload()
 
-    # save the merge model
-    merged_model.save_pretrained("merged_model", safe_serialization=True)
-    tokenizer.save_pretrained("merged_model")
+    # # save the merge model
+    # merged_model.save_pretrained("merged_model", safe_serialization=True)
+    # tokenizer.save_pretrained("merged_model")
 
     # @title Push Merged Model to the Hub
-    merged_model.push_to_hub(hf_model_rep)
-    tokenizer.push_to_hub(hf_model_rep)
+    # merged_model.push_to_hub(hf_model_rep)
+    # tokenizer.push_to_hub(hf_model_rep)
 
-    # Test the Merged Model
-    # sample = test_data[randrange(len(test_data))]
-    # prompt = f"""### System
-    # ### Users:
-    # {sample['conversations'][0]}
 
-    # ### Assistant:
-
-    # """
-    # input_ids = tokenizer(prompt, return_tensors="pt", truncation=True).input_ids.cuda()
-    # outputs = merged_model.generate(input_ids=input_ids, max_new_tokens=1000,
-    #                                 do_sample=True, top_p=0.9, temperature=0.5)
-    # generated_instruction = tokenizer.batch_decode(outputs.detach().cpu().numpy(),
-    #                                             skip_special_tokens=True)[0][len(prompt):]
-    # solution = sample['conversations'][1]
-    # print("Prompt: \n", prompt, "\n")
-    # print("Generated Instruction: \n", generated_instruction, "\n")
-    # print("Ground Thruth: \n", solution)
-
-    # @title Execute a new inference
-
-    # @title End Fine-tuning
+def main1():
+    args = argparse()
+    datateset = tsotsa._load_lima()
+    train_model(dataset_name=datateset, model_id=args.model_name, dataset_split="train[:20%]")
 
 if __name__ == "__main__":
     
