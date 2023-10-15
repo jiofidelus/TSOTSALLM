@@ -20,8 +20,8 @@ class TsotsaDataset:
     """
     # load lima dataset 
     def _load_lima(self):
-        # self.dataset_id = "GAIR/lima"
-        # self.dataset = load_dataset(self.dataset_id, split="train")
+        self.dataset_id = "GAIR/lima"
+        self.dataset = load_dataset(self.dataset_id, split="train")
         # with open(f"{path}/BBQ/lima.csv", "w+") as f:
         #     writer = csv.writer(f)
             
@@ -29,7 +29,7 @@ class TsotsaDataset:
         #     writer.writerow(["instruction", "response", "source"])
         #     for data in self.dataset:
         #         writer.writerow([data['conversations'][0], data['conversations'][1], data['source']])
-        self.dataset = pd.read_csv(f"{path}/BBQ/lima.csv")
+        # self.dataset = pd.read_csv(f"{path}/BBQ/lima.csv")
         return self.dataset
     
     # load databricks dataset
@@ -112,19 +112,32 @@ class TsotsaDataset:
     """
     
     def prepare_bbq_scenario(self, sample):
-        string = f"""
-            ### Welcome in your assistant!!!!!!!
-            
-            ### INSTRUCTIONS:
-            
-            {sample[0]}
+        
+        if 'question' or 'response' in sample:
+            string = f"""
+                ### Welcome in your assistant!!!!!!!
+                
+                ### INSTRUCTIONS:
+                {sample['question']}
+                
+                ### Answer
+                {sample['response']}
+            """
+        else:
+            instruction = sample['conversation'][0]
+            response = sample['conversation'][1]
+        
+            string = f"""
+                ### Welcome in your assistant!!!!!!!
+                
+                ### INSTRUCTIONS:   
+                {instruction}
 
 
-            ### Answer
-            {sample[1]}
+                ### Answer
+                {response}
 
-        """
-        print(string)
+            """
         return string
     
     def prepare_truthfulqa_scenario(self, sample):
