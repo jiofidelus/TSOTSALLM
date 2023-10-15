@@ -22,18 +22,44 @@ class TsotsaDataset:
     def _load_lima(self):
         self.dataset_id = "GAIR/lima"
         self.dataset = load_dataset(self.dataset_id, split="train")
+        with open(f"{path}/BBQ/lima.csv", "w+") as f:
+            writer = csv.writer(f)
+            
+            # write header file
+            writer.writerow(["instruction", "response", "source"])
+            for data in self.dataset:
+                writer.writerow([data['conversations'][0], data['conversations'][1], data['source']])
+        self.dataset = pd.read_csv(f"{path}/BBQ/lima.csv")
         return self.dataset
     
     # load databricks dataset
-    def _load_dolly(self):
+    def _load_dolly(self):        
         self.dataset_id = "databricks/databricks-dolly-15k"
         self.dataset = load_dataset(self.dataset_id, split="train")     
+        with open(f"{path}/BBQ/dolly.csv", "w+") as f:
+            writer = csv.writer(f)
+            
+            # write header file
+            writer.writerow(self.dataset.column_names)
+            for data in self.dataset:
+                writer.writerows([data.values()])
+        self.dataset = pd.read_csv(f"{path}/BBQ/dolly.csv") 
         return self.dataset
     
     # load oasst1 dataset
     def _load_oasst1(self):
-        self.dataset_id = "OpenAssistant/oasst1"
-        self.dataset = load_dataset(self.dataset_id, split="train")
+        # self.dataset_id = "OpenAssistant/oasst1"
+        # self.dataset = load_dataset(self.dataset_id, split="train")
+        
+        # with open(f"{path}/BBQ/oasst1.csv", "w+") as f:
+        #     writer = csv.writer(f)
+            
+        #     # write header file
+        #     writer.writerow(self.dataset.column_names)
+        #     for data in self.dataset:
+        #         writer.writerows([data.values()])
+        
+        self.dataset = pd.read_csv(f"{path}/BBQ/oasst1.csv")
         
         return self.dataset
     
@@ -51,12 +77,34 @@ class TsotsaDataset:
         self.dataset_id = "ai2_arc"
         self.dataset = load_dataset(self.dataset_id, split="train", name="ARC-Easy")
         
+        # with open(f"{path}/TruthfulQA/ai2_arc.csv", "w+") as f:
+        #     writer = csv.writer(f)
+            
+        #     # write header file
+        #     writer.writerow(self.dataset.column_names)
+        #     for data in self.dataset:
+        #         writer.writerows([data.values()])
+        
+        # self.dataset = pd.read_csv(f"{path}/TruthfulQA/ai2_arc.csv")
+        
+        
         return self.dataset
     
     # truthfullqa dataset
     def _load_commonsense_qa(self):
         self.dataset_id = "commonsense_qa"
         self.dataset = load_dataset(self.dataset_id, split="train")
+        
+        # with open(f"{path}/TruthfulQA/commense_qa.csv", "w+") as f:
+        #     writer = csv.writer(f)
+            
+        #     # write header file
+        #     writer.writerow(self.dataset.column_names)
+        #     for data in self.dataset:
+        #         writer.writerows([data.values()])
+        
+        # self.dataset = pd.read_csv(f"{path}/TruthfulQA/commense_qa.csv")
+        
         return self.dataset
     
     """ 
@@ -80,7 +128,7 @@ class TsotsaDataset:
         return string
     
     def prepare_truthfulqa_scenario(self, sample):
-        sample_dict = sample['choices']
+        sample_dict = eval(sample['choices'])
         text_list = sample_dict['text']
         label_list = sample_dict['label']
         formatted_list = []
@@ -128,13 +176,13 @@ class TsotsaDataset:
 # BBQ dataset
 # dataset_lima = tsotsa._load_lima()
 # dataset_dolly = tsotsa._load_dolly()
-# tsotsa.prepare_bbq_scenario(dataset_lima[randrange(len(dataset_lima))])
-# tsotsa.prepare_bbq_scenario(dataset_dolly[randrange(len(dataset_dolly))])
+# tsotsa.prepare_bbq_scenario(dataset_lima.iloc[randrange(len(dataset_lima))])
+# tsotsa.prepare_bbq_scenario(dataset_dolly.iloc[randrange(len(dataset_dolly))])
 
 # TruthfulQA dataset
 # ai2_arc_dataset = tsotsa._load_ai2_arc()
 # com_qa_dataset = tsotsa._load_commonsense_qa()
-# tsotsa.prepare_truthfulqa_scenario(ai2_arc_dataset[randrange(len(ai2_arc_dataset))])
+# tsotsa.prepare_truthfulqa_scenario(ai2_arc_dataset.iloc[randrange(len(ai2_arc_dataset))])
 
 
 # print(tsotsa._load_databricks())

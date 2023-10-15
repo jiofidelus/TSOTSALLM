@@ -107,19 +107,16 @@ def loginHub():
     # Login to the Hugging Face Hub
     login(token="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")
     return login
-
 loginHub()
 
 tsotsa = TsotsaDataset()
 
 
-def train_model(model_id, dataset_name, dataset_split):
+def train_model(model_id, dataset, dataset_type):
     args = argsparser()
     
     model_id = model_id
-    dataset_name = dataset_name
-    dataset_split = dataset_split
-    new_model = args.fine_tuned_model_name
+    new_model = args.output_dir
     hf_model_rep = args.hf_rep
     device_map = {'':0}
     
@@ -193,7 +190,7 @@ def train_model(model_id, dataset_name, dataset_split):
     packing = True #False
 
     # @title load dataset with instructions
-    train_data = load_dataset(dataset_name, split=dataset_split)
+    train_data = dataset
     
     
     """# fine-tune a Llama 2 model using trl and the SFTTrainer
@@ -251,7 +248,7 @@ def train_model(model_id, dataset_name, dataset_split):
         learning_rate=learning_rate,
         weight_decay=weight_decay,
         fp16=fp16,
-        bf16=args.bf16,
+        # bf16=args.bf16,
         max_grad_norm=max_grad_norm,
         warmup_ratio=warmup_ratio,
         max_steps=max_steps,
@@ -275,8 +272,8 @@ def train_model(model_id, dataset_name, dataset_split):
         max_seq_length=max_seq_length,
         tokenizer=tokenizer,
         packing=packing,
-        formatting_func=tsotsa.prepare_bbq_scenario,
-        args=args
+        formatting_func=dataset_type,
+        args=args_training
     )
     
      # @title Start Training
@@ -337,7 +334,7 @@ def train_model(model_id, dataset_name, dataset_split):
 def main1():
     args = argsparser()
     datateset = tsotsa._load_lima()
-    train_model(dataset_name=datateset, model_id=args.model_name, dataset_split="train[:20%]")
+    train_model(dataset=datateset, model_id=args.model_name, dataset_type=tsotsa.prepare_bbq_scenario)
 
 if __name__ == "__main__":
     
