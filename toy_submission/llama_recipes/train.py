@@ -122,33 +122,33 @@ def loginHub():
 loginHub()
 
 # tsotsa = TsotsaDataset(split="train[:1%]")
-lima = TsotsaDataset(split="train[:1%]", type_datset="bbq")
+lima = TsotsaDataset(split="train[:1%]", type_dataset="bbq")
 lima._load_lima()
-doly = TsotsaDataset(split="train[:1%]", type_datset="bbq")
+doly = TsotsaDataset(split="train[:1%]", type_dataset="bbq")
 doly._load_dolly()
-ai2_arc = TsotsaDataset(split="train[:1%]", type_datset="TruthfullQA")
+ai2_arc = TsotsaDataset(split="train[:1%]", type_dataset="TruthfullQA")
 ai2_arc._load_ai2_arc()
-common_sense = TsotsaDataset(split="train[:1%]", type_datset="TruthfullQA")
+common_sense = TsotsaDataset(split="train[:1%]", type_dataset="TruthfullQA")
 common_sense._load_commonsense_qa()
 
 
-def train_model(model_id, datasets, fornating_function):
+def train_model(model_id, datasets):
     i = 0
+    hf_model_rep = args.hf_rep
+    device_map = {'': 0}
+    new_model = args.output_dir
     # run list of all dataset
     for dataset in datasets:
         if dataset.get_type() == "bbq":
             fornating_function = dataset.prepare_bbq_scenario
         elif dataset.get_type() == "TruthfullQA":
-            fornating_function = dataset.prepare_truthfullqa_scenario
+            fornating_function = dataset.prepare_truthfulqa_scenario
         args = argsparser()
         if i == 0:
             model_id = model_id
             i += 1
         else:
-            model_id = f'{os.getcwd()}/{args.output_dir}'
-        new_model = args.output_dir
-        hf_model_rep = args.hf_rep
-        device_map = {'': 0}
+            model_id = hf_model_rep
 
         """
         bitsandBytes parameters
@@ -350,10 +350,20 @@ def train_model(model_id, datasets, fornating_function):
 
         # @title Merge LoRa and Base Model
         merged_model = new_model.merge_and_unload()
-
+        merged_model.generation_config.temperature = 0.1
+        merged_model.generation_config.do_sample = True
+        merged_model.generation_config.max_length = 100
+        merged_model.generation_config.top_k = 50
+        merged_model.generation_config.top_p = 0.95
+        merged_model.generation_config.num_beams = 5
+        merged_model.generation_config.no_repeat_ngram_size = 2
+        merged_model.generation_config.early_stopping = True
+        merged_model.generation_config.length_penalty = 0.1
+        merged_model.generation_config.num_return_sequences = 1
+        merged_model.generation_config.repetition_penalty = 1.0
         # save the merge model
-        merged_model.save_pretrained("merged_model", safe_serialization=True)
-        tokenizer.save_pretrained("merged_model")
+        # merged_model.save_pretrained("merged_model", safe_serialization=True)
+        # tokenizer.save_pretrained("merged_model")
 
         # @title Push Merged Model to the Hub
         merged_model.push_to_hub(hf_model_rep)
@@ -365,10 +375,10 @@ def train_model(model_id, datasets, fornating_function):
 
 def main1():
     args = argsparser()
-    datasets = [lima, doly, ai2_arc, common_sense]
-    model = train_model(dataset=datasets, model_id=args.model_name,
-                        fornating_function=tsotsa.prepare_bbq_scenario)
-    model.push_to_hub("yvelos/Tsotsallm-adapter")
+    datasets = [lima, ai2_arc]
+    model = train_model(
+        datasets=datasets, model_id=args.model_name)
+    # model.push_to_hub("yvelos/Tsotsallm-adapter")
 
 
 if __name__ == "__main__":

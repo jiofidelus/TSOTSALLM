@@ -11,10 +11,11 @@ path = f'{os.getcwd()}/toy_submission/llama_recipes/data'
 
 
 class TsotsaDataset:
-    def __init__(self, split, type_datset="bbq"):
+    def __init__(self, split, type_dataset="bbq"):
         self.dataset = []
         self.dataset_id = ""
         self.split = split
+        self.type_dataset = type_dataset
 
     # get size of the dataset
 
@@ -152,9 +153,9 @@ class TsotsaDataset:
         return string
 
 
-tsotsa = TsotsaDataset('train')
-tsotsa._load_lima()
-print(tsotsa.dataset)
+# tsotsa = TsotsaDataset('train')
+# tsotsa._load_lima()
+# print(tsotsa.dataset)
 
 # print(tsotsa._load_lima())
 
