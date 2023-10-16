@@ -102,6 +102,9 @@ def argsparser():
     return args
 
 
+args = argsparser()
+
+
 def loginHub():
     # @title Login on hugging face
     from huggingface_hub import login, notebook_login
@@ -143,12 +146,11 @@ def train_model(model_id, datasets):
             fornating_function = dataset.prepare_bbq_scenario
         elif dataset.get_type() == "TruthfullQA":
             fornating_function = dataset.prepare_truthfulqa_scenario
-        args = argsparser()
         if i == 0:
             model_id = model_id
-            i += 1
         else:
-            model_id = hf_model_rep
+            model_id = f"merged_model{i}"
+            i += 1
 
         """
         bitsandBytes parameters
@@ -352,17 +354,9 @@ def train_model(model_id, datasets):
         merged_model = new_model.merge_and_unload()
         merged_model.generation_config.temperature = 0.1
         merged_model.generation_config.do_sample = True
-        merged_model.generation_config.max_length = 100
-        merged_model.generation_config.top_k = 50
-        merged_model.generation_config.top_p = 0.95
-        merged_model.generation_config.num_beams = 5
-        merged_model.generation_config.no_repeat_ngram_size = 2
-        merged_model.generation_config.early_stopping = True
-        merged_model.generation_config.length_penalty = 0.1
-        merged_model.generation_config.num_return_sequences = 1
-        merged_model.generation_config.repetition_penalty = 1.0
+        merged_model.generation_config.num_beams = 4
         # save the merge model
-        # merged_model.save_pretrained("merged_model", safe_serialization=True)
+        # merged_model.save_pretrained(f"merged_model{i}")
         # tokenizer.save_pretrained("merged_model")
 
         # @title Push Merged Model to the Hub
@@ -374,11 +368,10 @@ def train_model(model_id, datasets):
 
 
 def main1():
-    args = argsparser()
     datasets = [lima, ai2_arc]
     model = train_model(
         datasets=datasets, model_id=args.model_name)
-    # model.push_to_hub("yvelos/Tsotsallm-adapter")
+    model.push_to_hub("yvelos/Tsotsallm-adapter")
 
 
 if __name__ == "__main__":
