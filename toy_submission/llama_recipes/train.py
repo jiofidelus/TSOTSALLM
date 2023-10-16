@@ -125,11 +125,11 @@ def loginHub():
 loginHub()
 
 # tsotsa = TsotsaDataset(split="train[:1%]")
-lima = TsotsaDataset(split="train[:1%]", type_dataset="bbq")
+lima = TsotsaDataset(split="train[:20%]", type_dataset="bbq")
 lima._load_lima()
 doly = TsotsaDataset(split="train[:1%]", type_dataset="bbq")
 doly._load_dolly()
-ai2_arc = TsotsaDataset(split="train[:1%]", type_dataset="TruthfullQA")
+ai2_arc = TsotsaDataset(split="train[:10%]", type_dataset="TruthfullQA")
 ai2_arc._load_ai2_arc()
 common_sense = TsotsaDataset(split="train[:1%]", type_dataset="TruthfullQA")
 common_sense._load_commonsense_qa()
@@ -149,7 +149,7 @@ def train_model(model_id, datasets):
         if i == 0:
             model_id = model_id
         else:
-            model_id = f"merged_model{i}"
+            model_id = hf_model_rep
             i += 1
 
         """
@@ -368,7 +368,7 @@ def train_model(model_id, datasets):
 
 
 def main1():
-    datasets = [lima, ai2_arc]
+    datasets = [lima]
     model = train_model(
         datasets=datasets, model_id=args.model_name)
     model.push_to_hub("yvelos/Tsotsallm-adapter")

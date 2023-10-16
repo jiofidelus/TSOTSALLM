@@ -5,9 +5,9 @@ uvicorn>=0.15.0,<0.16.0
 python_dotenv
 git+https://github.com/stanford-crfm/helm.git
 
-transformers==4.31.0
+transformers
 peft==0.4.0
 accelerate==0.21.0
 bitsandbytes==0.40.2
-trl==0.4.7
+trl
 safetensors>=0.3.1
