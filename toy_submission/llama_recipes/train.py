@@ -121,233 +121,254 @@ def loginHub():
 
 loginHub()
 
-tsotsa = TsotsaDataset(argsparser().split)
+# tsotsa = TsotsaDataset(split="train[:1%]")
+lima = TsotsaDataset(split="train[:1%]", type_datset="bbq")
+lima._load_lima()
+doly = TsotsaDataset(split="train[:1%]", type_datset="bbq")
+doly._load_dolly()
+ai2_arc = TsotsaDataset(split="train[:1%]", type_datset="TruthfullQA")
+ai2_arc._load_ai2_arc()
+common_sense = TsotsaDataset(split="train[:1%]", type_datset="TruthfullQA")
+common_sense._load_commonsense_qa()
 
 
-def train_model(model_id, dataset, dataset_type):
-    args = argsparser()
+def train_model(model_id, datasets, fornating_function):
+    i = 0
+    # run list of all dataset
+    for dataset in datasets:
+        if dataset.get_type() == "bbq":
+            fornating_function = dataset.prepare_bbq_scenario
+        elif dataset.get_type() == "TruthfullQA":
+            fornating_function = dataset.prepare_truthfullqa_scenario
+        args = argsparser()
+        if i == 0:
+            model_id = model_id
+            i += 1
+        else:
+            model_id = f'{os.getcwd()}/{args.output_dir}'
+        new_model = args.output_dir
+        hf_model_rep = args.hf_rep
+        device_map = {'': 0}
 
-    model_id = model_id
-    new_model = args.output_dir
-    hf_model_rep = args.hf_rep
-    device_map = {'': 0}
+        """
+        bitsandBytes parameters
+        """
+        # activation 4-bit precision base model loaded
+        use_4bits = True
 
-    """
-    bitsandBytes parameters
-    """
-    # activation 4-bit precision base model loaded
-    use_4bits = True
+        # Compute dtype for 4-bit base models
+        bnb_4bits_compute_dtype = "float16"
+        # quantisation type
+        bnb_4bits_quan_type = "nf4"  # we can use nf4 of fp4
+        # activation nested quantization for 4-bits base model (double quantization)
+        use_double_quant_nested = False
 
-    # Compute dtype for 4-bit base models
-    bnb_4bits_compute_dtype = "float16"
-    # quantisation type
-    bnb_4bits_quan_type = "nf4"  # we can use nf4 of fp4
-    # activation nested quantization for 4-bits base model (double quantization)
-    use_double_quant_nested = False
+        """
+        QloRa parameters
+        """
+        # LoRa attention dimension
+        lora_r = 64
+        # alpha parameter for lora scaling
+        lora_alpha = 16
+        # dropout probality for lora layer
+        lora_dropout = 0.1
 
-    """
-    QloRa parameters
-    """
-    # LoRa attention dimension
-    lora_r = 64
-    # alpha parameter for lora scaling
-    lora_alpha = 16
-    # dropout probality for lora layer
-    lora_dropout = 0.1
+        """
+        TrainingArgument parameters
+        """
+        # Output directory where the model predictions and checkpoints will be stored
+        ouput_dir = new_model
+        # number_of_training epochs
+        N_EPOCHS = 1
+        # Enable fp16/bf16 training
+        fp16 = False
+        # Batch size per GPU for training
+        per_device_train_batch_size = 1
+        # Number of update steps to accumulate the gradients
+        gradient_accumulation_steps = 1
+        # Enable gradient checkpointing
+        gradient_checkpointing = True
+        # Maximum gradient normal (gradient clipping)
+        max_grad_norm = 0.3
+        # Initial learning rate (AdamW optimizer)
+        learning_rate = 2e-4  # 1e-5
+        # Weight decay to apply to all layers except bias/LayerNorm weights
+        weight_decay = 0.001
+        # Optimizer to use
+        optim = "paged_adamw_32bit"
+        # Learning rate schedule
+        lr_scheduler_type = "cosine"
+        # Number of training steps
+        max_steps = 1
+        # Ratio of steps for a linear warmup (from 0 to learning rate)
+        warmup_ratio = 0.03
+        # Group sequences into batches with same length
+        group_by_length = False
+        # Save checkpoint every X updates steps
+        save_steps = 0
+        # Log every X updates steps
+        logging_steps = 25
+        # Disable tqdm
+        disable_tqdm = True
 
-    """
-    TrainingArgument parameters
-    """
-    # Output directory where the model predictions and checkpoints will be stored
-    ouput_dir = new_model
-    # number_of_training epochs
-    N_EPOCHS = 1
-    # Enable fp16/bf16 training
-    fp16 = False
-    # Batch size per GPU for training
-    per_device_train_batch_size = 1
-    # Number of update steps to accumulate the gradients
-    gradient_accumulation_steps = 1
-    # Enable gradient checkpointing
-    gradient_checkpointing = True
-    # Maximum gradient normal (gradient clipping)
-    max_grad_norm = 0.3
-    # Initial learning rate (AdamW optimizer)
-    learning_rate = 2e-4  # 1e-5
-    # Weight decay to apply to all layers except bias/LayerNorm weights
-    weight_decay = 0.001
-    # Optimizer to use
-    optim = "paged_adamw_32bit"
-    # Learning rate schedule
-    lr_scheduler_type = "cosine"
-    # Number of training steps
-    max_steps = -1
-    # Ratio of steps for a linear warmup (from 0 to learning rate)
-    warmup_ratio = 0.03
-    # Group sequences into batches with same length
-    group_by_length = False
-    # Save checkpoint every X updates steps
-    save_steps = 0
-    # Log every X updates steps
-    logging_steps = 25
-    # Disable tqdm
-    disable_tqdm = True
+        """
+        SFTTrainer parameters
+        """
+        # Maximum sequence length to use
+        max_seq_length = 2048
+        # Pack multiple short examples in the same input sequence to increase efficiency
+        packing = True  # False
 
-    """
-    SFTTrainer parameters
-    """
-    # Maximum sequence length to use
-    max_seq_length = 2048
-    # Pack multiple short examples in the same input sequence to increase efficiency
-    packing = True  # False
+        # @title load dataset with instructions
+        train_data = dataset.get_dataset()
 
-    # @title load dataset with instructions
-    train_data = dataset
+        """# fine-tune a Llama 2 model using trl and the SFTTrainer
 
-    """# fine-tune a Llama 2 model using trl and the SFTTrainer
+        to fine tuning our model, we need to convert our structured example of tasks by instructions. we define a formating function that take as inputs a sample and return string with our function format
+        """
 
-    to fine tuning our model, we need to convert our structured example of tasks by instructions. we define a formating function that take as inputs a sample and return string with our function format
-    """
+        # @title Using QLoRA technique to reduce memory footprint during the fine-tuning
+        # get the type
+        compute_dtype = getattr(th, bnb_4bits_compute_dtype)
+        print(compute_dtype)
 
-    # @title Using QLoRA technique to reduce memory footprint during the fine-tuning
-    # get the type
-    compute_dtype = getattr(th, bnb_4bits_compute_dtype)
-    print(compute_dtype)
+        # BitAndBytesConfg int-4 configuration
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=use_4bits,
+            bnb_4bit_use_double_quant=use_double_quant_nested,
+            bnb_4bit_quant_type=bnb_4bits_quan_type,
+            bnb_4bits_compute_dtype=compute_dtype
+        )
 
-    # BitAndBytesConfg int-4 configuration
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=use_4bits,
-        bnb_4bit_use_double_quant=use_double_quant_nested,
-        bnb_4bit_quant_type=bnb_4bits_quan_type,
-        bnb_4bits_compute_dtype=compute_dtype
-    )
+        # @title Load the pre-trained model
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id, quantization_config=bnb_config, use_cache=False, device_map=device_map)
+        model.config.pretraining_tp = 1
 
-    # @title Load the pre-trained model
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id, quantization_config=bnb_config, use_cache=False, device_map=device_map)
-    model.config.pretraining_tp = 1
+        # @title Load the tokenizer
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_id, trust_remote_code=True)
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.padding_side = "right"
+        tokenizer.name_or_path
 
-    # @title Load the tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
-    tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.padding_side = "right"
-    tokenizer.name_or_path
+        # @title Lora config based on Qlora paper
+        """
+        The SFTTrainer supports a native integration with peft, which makes it
+        super easy to efficiently instruction tune LLMs.
+        We only need to create our LoRAConfig and provide it to the trainer.
+        """
+        peft_config = LoraConfig(
+            lora_alpha=lora_alpha,
+            lora_dropout=lora_dropout,
+            r=lora_r,
+            bias="none",
+            task_type="CAUSAL_LM"
+        )
+        # @title Define parameters in TrainingArguments
+        args_training = TrainingArguments(
+            output_dir=ouput_dir,
+            num_train_epochs=N_EPOCHS,
+            per_device_train_batch_size=per_device_train_batch_size,
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            gradient_checkpointing=gradient_checkpointing,
+            optim=optim,
+            save_steps=save_steps,
+            logging_steps=logging_steps,
+            save_strategy="epoch",
+            learning_rate=learning_rate,
+            weight_decay=weight_decay,
+            fp16=fp16,
+            # bf16=args.bf16,
+            max_grad_norm=max_grad_norm,
+            warmup_ratio=warmup_ratio,
+            max_steps=max_steps,
+            group_by_length=group_by_length,
+            lr_scheduler_type=lr_scheduler_type,
+            # disable_tqdm=disable_tqdm,
+            report_to="tensorboard",
+            seed=args.seed
 
-    # @title Lora config based on Qlora paper
-    """
-    The SFTTrainer supports a native integration with peft, which makes it
-    super easy to efficiently instruction tune LLMs.
-    We only need to create our LoRAConfig and provide it to the trainer.
-    """
-    peft_config = LoraConfig(
-        lora_alpha=lora_alpha,
-        lora_dropout=lora_dropout,
-        r=lora_r,
-        bias="none",
-        task_type="CAUSAL_LM"
-    )
-    # @title Define parameters in TrainingArguments
-    args_training = TrainingArguments(
-        output_dir=ouput_dir,
-        num_train_epochs=N_EPOCHS,
-        per_device_train_batch_size=per_device_train_batch_size,
-        gradient_accumulation_steps=gradient_accumulation_steps,
-        gradient_checkpointing=gradient_checkpointing,
-        optim=optim,
-        save_steps=save_steps,
-        logging_steps=logging_steps,
-        save_strategy="epoch",
-        learning_rate=learning_rate,
-        weight_decay=weight_decay,
-        fp16=fp16,
-        # bf16=args.bf16,
-        max_grad_norm=max_grad_norm,
-        warmup_ratio=warmup_ratio,
-        max_steps=max_steps,
-        group_by_length=group_by_length,
-        lr_scheduler_type=lr_scheduler_type,
-        # disable_tqdm=disable_tqdm,
-        report_to="tensorboard",
-        seed=args.seed
+        )
 
-    )
+        """Before we can start our training, we need to define the hypersparemeters In a TrainingArgument object we want to use"""
+        # @title Create a Trainer
+        """
+        We now have every building block we need to create our SFTTrainer to start then training our model.
+        """
 
-    """Before we can start our training, we need to define the hypersparemeters In a TrainingArgument object we want to use"""
-    # @title Create a Trainer
-    """
-    We now have every building block we need to create our SFTTrainer to start then training our model.
-    """
-    trainer = SFTTrainer(
-        model=model,
-        train_dataset=train_data,
-        peft_config=peft_config,
-        max_seq_length=max_seq_length,
-        tokenizer=tokenizer,
-        packing=packing,
-        formatting_func=dataset_type,
-        args=args_training
-    )
+        trainer = SFTTrainer(
+            model=model,
+            train_dataset=train_data,
+            peft_config=peft_config,
+            max_seq_length=max_seq_length,
+            tokenizer=tokenizer,
+            packing=packing,
+            formatting_func=fornating_function,
+            args=args_training
+        )
 
-    # @title Start Training
-    """
-    Start training our model by calling the train() method on our Trainer instance.
-    """
-    start_time = time.time()
-    print("Start Training", start_time)
-    trainer.train()
-    print(f"Total training time {(time.time() - start_time) / 60:.2f} min")
+        # @title Start Training
+        """
+        Start training our model by calling the train() method on our Trainer instance.
+        """
+        start_time = time.time()
+        print("Start Training", start_time)
+        trainer.train()
+        print(f"Total training time {(time.time() - start_time) / 60:.2f} min")
 
-    # save metrics
-    # trainer.save_metrics()
+        # save metrics
+        # trainer.save_metrics()
 
-    # save_model in local
-    trainer.save_model()
+        # save_model in local
+        trainer.save_model()
 
-    """# Merge the model and adpater and save it
+        """# Merge the model and adpater and save it
 
-    if running in a T4 instance we have to clean the memory
-    """
+        if running in a T4 instance we have to clean the memory
+        """
 
-    # @title empty VRAM
-    import gc
-    del model
-    del trainer
-    gc.collect()
+        # @title empty VRAM
+        import gc
+        del model
+        del trainer
+        gc.collect()
 
-    th.cuda.empty_cache()
+        th.cuda.empty_cache()
 
-    gc.collect()
+        gc.collect()
 
-    # @title Reload the trained and saved model and merge it then we can save the whole model
-    new_model = AutoPeftModelForCausalLM.from_pretrained(
-        args.output_dir,
-        low_cpu_mem_usage=True,
-        return_dict=True,
-        torch_dtype=th.float16,
-        device_map=device_map
-    )
-    new_model.push_to_hub("yvelos/Tsotsallm-adapter")
-    model = args.output_dir
+        # @title Reload the trained and saved model and merge it then we can save the whole model
+        new_model = AutoPeftModelForCausalLM.from_pretrained(
+            args.output_dir,
+            low_cpu_mem_usage=True,
+            return_dict=True,
+            torch_dtype=th.float16,
+            device_map=device_map
+        )
+        # new_model.push_to_hub("yvelos/Tsotsallm-adapter")
 
-    return model
+        # @title Merge LoRa and Base Model
+        merged_model = new_model.merge_and_unload()
 
-    # @title Merge LoRa and Base Model
-    # merged_model = new_model.merge_and_unload()
+        # save the merge model
+        merged_model.save_pretrained("merged_model", safe_serialization=True)
+        tokenizer.save_pretrained("merged_model")
 
-    # # save the merge model
-    # merged_model.save_pretrained("merged_model", safe_serialization=True)
-    # tokenizer.save_pretrained("merged_model")
+        # @title Push Merged Model to the Hub
+        merged_model.push_to_hub(hf_model_rep)
+        tokenizer.push_to_hub(hf_model_rep)
 
-    # @title Push Merged Model to the Hub
-    # merged_model.push_to_hub(hf_model_rep)
-    # tokenizer.push_to_hub(hf_model_rep)
+        print("===========END TO train model=====================")
+    return new_model
 
 
 def main1():
     args = argsparser()
-    datateset = tsotsa._load_lima()
-    train_model(dataset=datateset, model_id=args.model_name,
-                dataset_type=tsotsa.prepare_bbq_scenario)
+    datasets = [lima, doly, ai2_arc, common_sense]
+    model = train_model(dataset=datasets, model_id=args.model_name,
+                        fornating_function=tsotsa.prepare_bbq_scenario)
+    model.push_to_hub("yvelos/Tsotsallm-adapter")
 
 
 if __name__ == "__main__":
