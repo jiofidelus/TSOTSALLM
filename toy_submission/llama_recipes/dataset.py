@@ -5,7 +5,7 @@ import os
 import requests
 import jsonlines
 
-path = f'{os.getcwd()}/toy_submission/llama_recipes/data'
+path = f'{os.getcwd()}/data'
 
 
 def download_file(path_destination):
@@ -131,8 +131,8 @@ class TsotsaDataset:
                     for data in reader:
                         self.dataset.append(data)
 
-        self.dataset = pd.DataFrame(self.dataset[:10])
-        print(self.dataset.columns)
+        self.dataset = self.dataset[:100]
+        # print(self.dataset.columns)
         print("Size of dataset", len(self.dataset))
         return self.dataset
 
@@ -254,7 +254,7 @@ class TsotsaDataset:
         {correct_answer}
 
         """
-        print(string)
+        # print(string)
         return string
 
 
