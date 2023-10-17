@@ -256,9 +256,6 @@ def train_model(model_id, datasets):
         # @title Load the pre-trained model
         model = AutoModelForCausalLM.from_pretrained(
             model_id, quantization_config=bnb_config, use_cache=False, device_map=device_map)
-        model.config.pretraining_tp = 1
-        model.config.temperature = 0.1
-        model.config.do_sample = True
 
         # @title Load the tokenizer
         tokenizer = AutoTokenizer.from_pretrained(
@@ -363,10 +360,15 @@ def train_model(model_id, datasets):
         # new_model.push_to_hub("yvelos/Tsotsallm-adapter")
 
         # @title Merge LoRa and Base Model
+
         merged_model = new_model.merge_and_unload()
         merged_model.generation_config.temperature = 0.1
         merged_model.generation_config.do_sample = True
         merged_model.generation_config.num_beams = 4
+        # config json
+        merged_model.config.pretraining_tp = 1
+        merged_model.config.temperature = 0.1
+        merged_model.config.do_sample = True
         # save the merge model
         # merged_model.save_pretrained(f"merged_model{i}")
         # tokenizer.save_pretrained("merged_model")
@@ -385,6 +387,7 @@ def main1():
     """)
     start_time = time.time()
     print(f"Start Global Training {start_time / 60:.2f} min")
+    # datasets = [lima, dolly, ai2_arc, common_sense, xsum, cnn_dailymail,bbq]
     datasets = [bbq]
     model = train_model(
         datasets=datasets, model_id=args.model_name)
