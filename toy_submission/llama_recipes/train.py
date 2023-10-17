@@ -48,8 +48,6 @@ In this project we'll use 4-bit quantification to fine tune LLama-2 in purpose t
 # @title Install dependancies
 
 # @title Import dependancies
-from datasets import load_dataset
-from random import randrange
 
 import torch as th
 from peft import LoraConfig, prepare_model_for_kbit_training, get_peft_model, AutoPeftModelForCausalLM
@@ -124,15 +122,21 @@ def loginHub():
 
 loginHub()
 
-# tsotsa = TsotsaDataset(split="train[:1%]")
+# BB Scenario QA
 lima = TsotsaDataset(split="train[:20%]", type_dataset="bbq")
 lima._load_lima()
-doly = TsotsaDataset(split="train[:1%]", type_dataset="bbq")
-doly._load_dolly()
+dolly = TsotsaDataset(split="train[:1%]", type_dataset="bbq")
+dolly._load_dolly()
+# truthfull QA
 ai2_arc = TsotsaDataset(split="train[:10%]", type_dataset="TruthfullQA")
 ai2_arc._load_ai2_arc()
 common_sense = TsotsaDataset(split="train[:1%]", type_dataset="TruthfullQA")
 common_sense._load_commonsense_qa()
+# Summary Scenario QA
+cnn_dailymail = TsotsaDataset(split="train[:10%]", type_dataset='summary')
+cnn_dailymail._load_cnn_dailymail()
+xsum = TsotsaDataset(split="[:10%]", type_dataset='summary')
+xsum._load_xsum()
 
 
 def train_model(model_id, datasets):
@@ -142,10 +146,12 @@ def train_model(model_id, datasets):
     new_model = args.output_dir
     # run list of all dataset
     for dataset in datasets:
-        if dataset.get_type() == "bbq":
-            fornating_function = dataset.prepare_bbq_scenario
+        if dataset.get_type() == "bb":
+            formating_function = dataset.prepare_bb_scenario
         elif dataset.get_type() == "TruthfullQA":
-            fornating_function = dataset.prepare_truthfulqa_scenario
+            formating_function = dataset.prepare_truthfulqa_scenario
+        elif dataset.get_type() == "summary":
+            formating_function = dataset.prepare_summerization_scenario
         if i == 0:
             model_id = model_id
         else:
@@ -181,19 +187,19 @@ def train_model(model_id, datasets):
         # Output directory where the model predictions and checkpoints will be stored
         ouput_dir = new_model
         # number_of_training epochs
-        N_EPOCHS = 1
+        N_EPOCHS = args.epochs
         # Enable fp16/bf16 training
         fp16 = False
         # Batch size per GPU for training
-        per_device_train_batch_size = 1
+        per_device_train_batch_size = args.per_device_train_batch_size
         # Number of update steps to accumulate the gradients
         gradient_accumulation_steps = 1
         # Enable gradient checkpointing
-        gradient_checkpointing = True
+        gradient_checkpointing = args.gradient_checkpointing
         # Maximum gradient normal (gradient clipping)
         max_grad_norm = 0.3
         # Initial learning rate (AdamW optimizer)
-        learning_rate = 2e-4  # 1e-5
+        learning_rate = args.lr  # 1e-5
         # Weight decay to apply to all layers except bias/LayerNorm weights
         weight_decay = 0.001
         # Optimizer to use
@@ -201,7 +207,7 @@ def train_model(model_id, datasets):
         # Learning rate schedule
         lr_scheduler_type = "cosine"
         # Number of training steps
-        max_steps = 1
+        max_steps = -1
         # Ratio of steps for a linear warmup (from 0 to learning rate)
         warmup_ratio = 0.03
         # Group sequences into batches with same length
@@ -246,6 +252,8 @@ def train_model(model_id, datasets):
         model = AutoModelForCausalLM.from_pretrained(
             model_id, quantization_config=bnb_config, use_cache=False, device_map=device_map)
         model.config.pretraining_tp = 1
+        model.config.temperature = 0.1
+        model.config.do_sample = True
 
         # @title Load the tokenizer
         tokenizer = AutoTokenizer.from_pretrained(
@@ -290,7 +298,6 @@ def train_model(model_id, datasets):
             # disable_tqdm=disable_tqdm,
             report_to="tensorboard",
             seed=args.seed
-
         )
 
         """Before we can start our training, we need to define the hypersparemeters In a TrainingArgument object we want to use"""
@@ -306,7 +313,7 @@ def train_model(model_id, datasets):
             max_seq_length=max_seq_length,
             tokenizer=tokenizer,
             packing=packing,
-            formatting_func=fornating_function,
+            formatting_func=formating_function,
             args=args_training
         )
 
@@ -368,10 +375,18 @@ def train_model(model_id, datasets):
 
 
 def main1():
-    datasets = [lima]
+    print("""
+        Start training our model By loading the dataset.
+    """)
+    start_time = time.time()
+    print(f"Start Global Training {start_time / 60:.2f} min")
+    datasets = [lima, dolly, ai2_arc, common_sense, cnn_dailymail, xsum]
     model = train_model(
         datasets=datasets, model_id=args.model_name)
     model.push_to_hub("yvelos/Tsotsallm-adapter")
+
+    print(
+        f"Total GLobal for training time {(time.time() - start_time) / 60:.2f} min")
 
 
 if __name__ == "__main__":
