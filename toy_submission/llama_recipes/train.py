@@ -69,7 +69,7 @@ def argsparser():
                         help="HuggingFace repository")
     parser.add_argument("--lr", type=float, default=2e-15,
                         help="Learning rate that allow to ajust model weight")
-    parser.add_argument("--epochs", type=int, default=2,
+    parser.add_argument("--epochs", type=int, default=3,
                         help="chunk data to train it")
     parser.add_argument("--output_dir", type=str, required=True,
                         help="name of the fine-tuned model")

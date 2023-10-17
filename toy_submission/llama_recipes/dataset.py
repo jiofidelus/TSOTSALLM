@@ -1,11 +1,12 @@
-from datasets import load_dataset
+from datasets import load_dataset, Dataset, Features, Value, ClassLabel
 from random import randrange
 import pandas as pd
 import os
 import requests
 import jsonlines
 
-path = f'{os.getcwd()}/data'
+# path = f'{os.getcwd()}/data'
+path = f'{os.getcwd()}/toy_submission/llama_recipes/data'
 
 
 def download_file(path_destination):
@@ -131,7 +132,7 @@ class TsotsaDataset:
                     for data in reader:
                         self.dataset.append(data)
 
-        self.dataset = self.dataset[:100]
+        self.dataset = self.dataset[:2000]
         # print(self.dataset.columns)
         print("Size of dataset", len(self.dataset))
         return self.dataset
