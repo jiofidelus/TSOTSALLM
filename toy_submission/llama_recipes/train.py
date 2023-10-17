@@ -137,6 +137,9 @@ cnn_dailymail = TsotsaDataset(split="train[:10%]", type_dataset='summary')
 cnn_dailymail._load_cnn_dailymail()
 xsum = TsotsaDataset(split="[:10%]", type_dataset='summary')
 xsum._load_xsum()
+# BBQ scenario
+bbq = TsotsaDataset(split="", type_dataset='bbq')
+bbq.prepare_bbq_scenario()
 
 
 def train_model(model_id, datasets):
@@ -152,6 +155,8 @@ def train_model(model_id, datasets):
             formating_function = dataset.prepare_truthfulqa_scenario
         elif dataset.get_type() == "summary":
             formating_function = dataset.prepare_summerization_scenario
+        elif dataset.get_type() == 'bbq':
+            formating_function = dataset.prepare_bbq_scenario
         if i == 0:
             model_id = model_id
         else:
@@ -380,7 +385,7 @@ def main1():
     """)
     start_time = time.time()
     print(f"Start Global Training {start_time / 60:.2f} min")
-    datasets = [lima, dolly, ai2_arc, common_sense, cnn_dailymail, xsum]
+    datasets = [lima, dolly, ai2_arc, common_sense, cnn_dailymail, xsum, bbq]
     model = train_model(
         datasets=datasets, model_id=args.model_name)
     model.push_to_hub("yvelos/Tsotsallm-adapter")

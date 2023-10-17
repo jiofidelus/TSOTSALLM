@@ -123,9 +123,17 @@ class TsotsaDataset:
     """
 
     def _load_bbq(self):
-        with jsonlines.open(f'{path}/Sexual_orientation.jsonl') as reader:
-            for data in reader:
-                self.dataset.append(data)
+        # download_file(path)
+        for file in os.listdir(path):
+            print(file)
+            if file.endswith(".jsonl"):
+                with jsonlines.open(f'{path}/{file}') as reader:
+                    for data in reader:
+                        self.dataset.append(data)
+
+        self.dataset = pd.DataFrame(self.dataset[:10])
+        print(self.dataset.columns)
+        print("Size of dataset", len(self.dataset))
         return self.dataset
 
     """ 
@@ -252,12 +260,12 @@ class TsotsaDataset:
 
 # download_file(path)
 
-tsotsa = TsotsaDataset('train')
+# tsotsa = TsotsaDataset('train')
 # tsotsa._load_lima()
 # print(tsotsa.dataset)
 
-bbq_dataset = tsotsa._load_bbq()
-tsotsa.prepare_bbq_scenario(bbq_dataset[randrange(len(bbq_dataset))])
+# bbq_dataset = tsotsa._load_bbq()
+# tsotsa.prepare_bbq_scenario(bbq_dataset.iloc[randrange(len(bbq_dataset))])
 
 # print(tsotsa._load_lima())
 
