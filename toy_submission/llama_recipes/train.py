@@ -391,8 +391,6 @@ def main1():
     print("""
         Start training our model By loading the dataset.
     """)
-    start_time = time.time()
-    print(f"Start Global Training {(start_time) / 60:.2f} min")
     # datasets = [lima, dolly, ai2_arc, common_sense, xsum, cnn_dailymail,bbq]
     datasets = [lima, dolly, ai2_arc, common_sense, xsum, bbq]
     tokenizer = train_model(
@@ -404,12 +402,13 @@ def main1():
         torch_dtype=th.float16,
         device_map={'': 0}
     )
+    print(" Push Model to the Hub")
     model.push_to_hub("yvelos/Tsotsallm-adapter")
     tokenizer.push_to_hub('yvelos/Tsotsallm-adapter')
     # model.push_to_hub(args.hf_rep)
 
     print(
-        f"Total GLobal for training time {(time.time() - start_time) / 60:.2f} min")
+        f"End of training, the model is saved in {args.output_dir} and push to the hub")
 
 
 if __name__ == "__main__":
