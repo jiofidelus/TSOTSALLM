@@ -160,7 +160,7 @@ def train_model(model_id, datasets):
         if i == 0:
             model_id = model_id
         else:
-            model_id = 'Tsotsallm'
+            model_id = args.output_dir
             i += 1
 
         """
@@ -355,36 +355,36 @@ def train_model(model_id, datasets):
         gc.collect()
 
         # @title Reload the trained and saved model and merge it then we can save the whole model
-        new_model = AutoModelForCausalLM.from_pretrained(
-            args.output_dir,
-            low_cpu_mem_usage=True,
-            return_dict=True,
-            torch_dtype=th.float16,
-            device_map=device_map
-        )
+        # new_model = AutoPeftModelForCausalLM.from_pretrained(
+        #     args.output_dir,
+        #     low_cpu_mem_usage=True,
+        #     return_dict=True,
+        #     torch_dtype=th.float16,
+        #     device_map=device_map
+        # )
         # new_model.push_to_hub("yvelos/Tsotsallm-adapter")
 
         # @title Merge LoRa and Base Model
 
-        merged_model = new_model.merge_and_unload()
-        merged_model.generation_config.temperature = 0.1
-        merged_model.generation_config.do_sample = True
-        merged_model.generation_config.num_beams = 4
-        # config json
-        merged_model.config.pretraining_tp = 1
-        merged_model.config.temperature = 0.1
-        merged_model.config.do_sample = True
+        # merged_model = new_model.merge_and_unload()
+        # merged_model.generation_config.temperature = 0.1
+        # merged_model.generation_config.do_sample = True
+        # merged_model.generation_config.num_beams = 4
+        # # config json
+        # merged_model.config.pretraining_tp = 1
+        # merged_model.config.temperature = 0.1
+        # merged_model.config.do_sample = True
         # save the merge model
         # merged_model.save_pretrained(f"merged_model{i}")
         # tokenizer.save_pretrained("merged_model")
 
         # @title Push Merged Model to the Hub
-        merged_model.push_to_hub('Tsotsallm-adapter')
+        # merged_model.push_to_hub('Tsotsallm-adapter')
 
-        tokenizer.push_to_hub('Tsotsallm-adapter')
+        # tokenizer.push_to_hub('Tsotsallm-adapter')
 
         print("===========END TO train model=====================")
-    return new_model, tokenizer
+    return tokenizer
 
 
 def main1():
@@ -395,10 +395,18 @@ def main1():
     print(f"Start Global Training {(start_time) / 60:.2f} min")
     # datasets = [lima, dolly, ai2_arc, common_sense, xsum, cnn_dailymail,bbq]
     datasets = [lima, dolly, ai2_arc, common_sense, xsum, bbq]
-    model, tokenizer = train_model(
+    tokenizer = train_model(
         datasets=datasets, model_id=args.model_name)
-    # model.push_to_hub("yvelos/Tsotsallm-adapter")
-    # tokenizer.push_to_hub('yvelos/Tsotsallm-adapter')
+    model = AutoModelForCausalLM.from_pretrained(
+        args.output_dir,
+        low_cpu_mem_usage=True,
+        return_dict=True,
+        torch_dtype=th.float16,
+        device_map={'': 0}
+    )
+    model.push_to_hub("yvelos/Tsotsallm-adapter")
+    tokenizer.push_to_hub('yvelos/Tsotsallm-adapter')
+    # model.push_to_hub(args.hf_rep)
 
     print(
         f"Total GLobal for training time {(time.time() - start_time) / 60:.2f} min")
