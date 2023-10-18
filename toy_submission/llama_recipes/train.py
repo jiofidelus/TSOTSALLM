@@ -133,7 +133,7 @@ ai2_arc = TsotsaDataset(split="train[:10%]", type_dataset="TruthfullQA")
 common_sense = TsotsaDataset(split="train[:1%]", type_dataset="TruthfullQA")
 # common_sense._load_commonsense_qa()
 # Summary Scenario QA
-cnn_dailymail = TsotsaDataset(split="train[:0.5%]", type_dataset='summary')
+cnn_dailymail = TsotsaDataset(split="train[:1%]", type_dataset='summary')
 cnn_dailymail._load_cnn_dailymail()
 xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary')
 # xsum._load_xsum()
