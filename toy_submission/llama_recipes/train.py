@@ -123,23 +123,23 @@ def loginHub():
 loginHub()
 
 # BB Scenario QA
-lima = TsotsaDataset(split="train[:20%]", type_dataset="bbq")
-# lima._load_lima()
-dolly = TsotsaDataset(split="train[:1%]", type_dataset="bbq")
-# dolly._load_dolly()
+lima = TsotsaDataset(split="train[:20%]", type_dataset="bb")
+lima._load_lima()
+dolly = TsotsaDataset(split="train[:1%]", type_dataset="bb")
+dolly._load_dolly()
 # truthfull QA
 ai2_arc = TsotsaDataset(split="train[:10%]", type_dataset="TruthfullQA")
-# ai2_arc._load_ai2_arc()
+ai2_arc._load_ai2_arc()
 common_sense = TsotsaDataset(split="train[:1%]", type_dataset="TruthfullQA")
-# common_sense._load_commonsense_qa()
+common_sense._load_commonsense_qa()
 # Summary Scenario QA
 cnn_dailymail = TsotsaDataset(split="train[:1%]", type_dataset='summary')
-cnn_dailymail._load_cnn_dailymail()
+# cnn_dailymail._load_cnn_dailymail()
 xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary')
-# xsum._load_xsum()
+xsum._load_xsum()
 # BBQ scenario
 bbq = TsotsaDataset(split="", type_dataset='bbq')
-# bbq._load_bbq()
+bbq._load_bbq()
 
 
 def train_model(model_id, datasets):
@@ -160,7 +160,7 @@ def train_model(model_id, datasets):
         if i == 0:
             model_id = model_id
         else:
-            model_id = hf_model_rep
+            model_id = 'Tsotsallm'
             i += 1
 
         """
@@ -255,7 +255,12 @@ def train_model(model_id, datasets):
 
         # @title Load the pre-trained model
         model = AutoModelForCausalLM.from_pretrained(
-            model_id, quantization_config=bnb_config, use_cache=False, device_map=device_map)
+            model_id, quantization_config=bnb_config,
+            use_cache=False,
+            device_map=device_map,
+            low_cpu_mem_usage=True,
+            return_dict=True,
+            torch_dtype=th.float16)
 
         # @title Load the tokenizer
         tokenizer = AutoTokenizer.from_pretrained(
@@ -350,7 +355,7 @@ def train_model(model_id, datasets):
         gc.collect()
 
         # @title Reload the trained and saved model and merge it then we can save the whole model
-        new_model = AutoPeftModelForCausalLM.from_pretrained(
+        new_model = AutoModelForCausalLM.from_pretrained(
             args.output_dir,
             low_cpu_mem_usage=True,
             return_dict=True,
@@ -374,8 +379,9 @@ def train_model(model_id, datasets):
         # tokenizer.save_pretrained("merged_model")
 
         # @title Push Merged Model to the Hub
-        merged_model.push_to_hub(hf_model_rep)
-        tokenizer.push_to_hub(hf_model_rep)
+        merged_model.push_to_hub('Tsotsallm-adapter')
+
+        tokenizer.push_to_hub('Tsotsallm-adapter')
 
         print("===========END TO train model=====================")
     return new_model, tokenizer
@@ -388,7 +394,7 @@ def main1():
     start_time = time.time()
     print(f"Start Global Training {(start_time) / 60:.2f} min")
     # datasets = [lima, dolly, ai2_arc, common_sense, xsum, cnn_dailymail,bbq]
-    datasets = [cnn_dailymail]
+    datasets = [lima, dolly, ai2_arc, common_sense, xsum, bbq]
     model, tokenizer = train_model(
         datasets=datasets, model_id=args.model_name)
     # model.push_to_hub("yvelos/Tsotsallm-adapter")

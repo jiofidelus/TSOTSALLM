@@ -203,7 +203,7 @@ class TsotsaDataset:
             {sample['summary']}
 
         """
-        print(string)
+        # print(string)
         return string
 
     def prepare_bbq_scenario(self, sample):
@@ -269,7 +269,7 @@ class TsotsaDataset:
 # print(tsotsa.dataset)
 
 # bbq_dataset = tsotsa._load_bbq()
-# tsotsa.prepare_bbq_scenario(bbq_dataset.iloc[randrange(len(bbq_dataset))])
+# tsotsa.prepare_bbq_scenario(bbq_dataset[randrange(len(bbq_dataset))])
 
 # print(tsotsa._load_lima())
 
