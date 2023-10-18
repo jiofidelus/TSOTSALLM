@@ -6,9 +6,9 @@ python_dotenv
 git+https://github.com/stanford-crfm/helm.git
 
 transformers
-peft==0.4.0
+peft==0.5.0
 accelerate==0.21.0
-bitsandbytes==0.40.2
+bitsandbytes
 trl
 safetensors>=0.3.1
 jsonlines

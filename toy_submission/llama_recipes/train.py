@@ -124,22 +124,22 @@ loginHub()
 
 # BB Scenario QA
 lima = TsotsaDataset(split="train[:20%]", type_dataset="bbq")
-lima._load_lima()
+# lima._load_lima()
 dolly = TsotsaDataset(split="train[:1%]", type_dataset="bbq")
-dolly._load_dolly()
+# dolly._load_dolly()
 # truthfull QA
 ai2_arc = TsotsaDataset(split="train[:10%]", type_dataset="TruthfullQA")
-ai2_arc._load_ai2_arc()
+# ai2_arc._load_ai2_arc()
 common_sense = TsotsaDataset(split="train[:1%]", type_dataset="TruthfullQA")
-common_sense._load_commonsense_qa()
+# common_sense._load_commonsense_qa()
 # Summary Scenario QA
-cnn_dailymail = TsotsaDataset(split="train[:10%]", type_dataset='summary')
+cnn_dailymail = TsotsaDataset(split="train[:1%]", type_dataset='summary')
 cnn_dailymail._load_cnn_dailymail()
-xsum = TsotsaDataset(split="train[:10%]", type_dataset='summary')
-xsum._load_xsum()
+xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary')
+# xsum._load_xsum()
 # BBQ scenario
 bbq = TsotsaDataset(split="", type_dataset='bbq')
-bbq._load_bbq()
+# bbq._load_bbq()
 
 
 def train_model(model_id, datasets):
@@ -388,11 +388,11 @@ def main1():
     start_time = time.time()
     print(f"Start Global Training {(start_time) / 60:.2f} min")
     # datasets = [lima, dolly, ai2_arc, common_sense, xsum, cnn_dailymail,bbq]
-    datasets = [bbq]
+    datasets = [cnn_dailymail]
     model, tokenizer = train_model(
         datasets=datasets, model_id=args.model_name)
-    model.push_to_hub("yvelos/Tsotsallm-adapter")
-    tokenizer.push_tohub('yvelos/Tsotsallm-adapter')
+    # model.push_to_hub("yvelos/Tsotsallm-adapter")
+    # tokenizer.push_to_hub('yvelos/Tsotsallm-adapter')
 
     print(
         f"Total GLobal for training time {(time.time() - start_time) / 60:.2f} min")
