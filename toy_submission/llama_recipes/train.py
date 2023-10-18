@@ -67,9 +67,9 @@ def argsparser():
     parser.add_argument("--split", type=str, default="train[:10%]")
     parser.add_argument("--hf_rep", type=str, required=True,
                         help="HuggingFace repository")
-    parser.add_argument("--lr", type=float, default=2e-15,
+    parser.add_argument("--lr", type=float, default=2e-5,
                         help="Learning rate that allow to ajust model weight")
-    parser.add_argument("--epochs", type=int, default=3,
+    parser.add_argument("--epochs", type=int, default=1,
                         help="chunk data to train it")
     parser.add_argument("--output_dir", type=str, required=True,
                         help="name of the fine-tuned model")
@@ -378,7 +378,7 @@ def train_model(model_id, datasets):
         tokenizer.push_to_hub(hf_model_rep)
 
         print("===========END TO train model=====================")
-    return new_model
+    return new_model, tokenizer
 
 
 def main1():
@@ -386,12 +386,13 @@ def main1():
         Start training our model By loading the dataset.
     """)
     start_time = time.time()
-    print(f"Start Global Training {start_time / 60:.2f} min")
+    print(f"Start Global Training {(start_time) / 60:.2f} min")
     # datasets = [lima, dolly, ai2_arc, common_sense, xsum, cnn_dailymail,bbq]
     datasets = [bbq]
-    model = train_model(
+    model, tokenizer = train_model(
         datasets=datasets, model_id=args.model_name)
     model.push_to_hub("yvelos/Tsotsallm-adapter")
+    tokenizer.push_tohub('yvelos/Tsotsallm-adapter')
 
     print(
         f"Total GLobal for training time {(time.time() - start_time) / 60:.2f} min")

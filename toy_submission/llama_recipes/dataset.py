@@ -5,8 +5,8 @@ import os
 import requests
 import jsonlines
 
-# path = f'{os.getcwd()}/data'
-path = f'{os.getcwd()}/toy_submission/llama_recipes/data'
+path = f'{os.getcwd()}/data'
+# path = f'{os.getcwd()}/toy_submission/llama_recipes/data'
 
 
 def download_file(path_destination):
@@ -132,7 +132,7 @@ class TsotsaDataset:
                     for data in reader:
                         self.dataset.append(data)
 
-        self.dataset = self.dataset[:2000]
+        self.dataset = self.dataset[:1000]
         # print(self.dataset.columns)
         print("Size of dataset", len(self.dataset))
         return self.dataset
