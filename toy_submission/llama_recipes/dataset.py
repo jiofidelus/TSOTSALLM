@@ -184,10 +184,13 @@ class TsotsaDataset:
         return string
 
     def prepare_summerization_scenario(self, sample):
-        if 'highlights' in sample:
+        if 'highlights' and 'article' in sample:
             summary = sample['highlights']
+            document = sample['article']
             del sample['highlights']
+            del sample['article']
             sample['summary'] = summary
+            sample['document'] = document
         string = f"""
             ### Welcome in your assistant!!!!!!!
             
