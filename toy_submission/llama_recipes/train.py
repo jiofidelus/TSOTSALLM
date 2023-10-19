@@ -67,9 +67,9 @@ def argsparser():
     parser.add_argument("--split", type=str, default="train[:10%]")
     parser.add_argument("--hf_rep", type=str, required=True,
                         help="HuggingFace repository")
-    parser.add_argument("--lr", type=float, default=2e-4,
+    parser.add_argument("--lr", type=float, default=1e-15,
                         help="Learning rate that allow to ajust model weight")
-    parser.add_argument("--epochs", type=int, default=1,
+    parser.add_argument("--epochs", type=int, default=3,
                         help="chunk data to train it")
     parser.add_argument("--output_dir", type=str, required=True,
                         help="name of the fine-tuned model")
@@ -123,19 +123,19 @@ def loginHub():
 loginHub()
 
 # BB Scenario QA
-lima = TsotsaDataset(split="train[:20%]", type_dataset="bb")
+lima = TsotsaDataset(split="train", type_dataset="bb")
 lima._load_lima()
-dolly = TsotsaDataset(split="train[:1%]", type_dataset="bb")
+dolly = TsotsaDataset(split="train[:40%]", type_dataset="bb")
 dolly._load_dolly()
 # truthfull QA
-ai2_arc = TsotsaDataset(split="train[:10%]", type_dataset="TruthfullQA")
+ai2_arc = TsotsaDataset(split="train[:50%]", type_dataset="TruthfullQA")
 ai2_arc._load_ai2_arc()
-common_sense = TsotsaDataset(split="train[:1%]", type_dataset="TruthfullQA")
+common_sense = TsotsaDataset(split="train[:50%]", type_dataset="TruthfullQA")
 common_sense._load_commonsense_qa()
 # Summary Scenario QA
 cnn_dailymail = TsotsaDataset(split="train[:1%]", type_dataset='summary')
 # cnn_dailymail._load_cnn_dailymail()
-xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary')
+xsum = TsotsaDataset(split="train[:5%]", type_dataset='summary')
 xsum._load_xsum()
 # BBQ scenario
 bbq = TsotsaDataset(split="", type_dataset='bbq')
@@ -157,13 +157,6 @@ def train_model(model_id, datasets):
             formating_function = dataset.prepare_summerization_scenario
         elif dataset.get_type() == 'bbq':
             formating_function = dataset.prepare_bbq_scenario
-
-        # if len(dataset.get_dataset()) <= 1000:
-        #     args.per_device_train_batch_size = 2
-        # elif len(dataset.get_dataset()) >= 1000 and len(datasets.dataset) <= 10000:
-        #     args.per_device_train_batch_size = 4
-        # elif len(dataset.get_dataset()) >= 10000 and len(datasets.dataset) <= 400000:
-        #     args.per_device_train_batch_size = 8
         if i == 0:
             model_id = model_id
         else:
@@ -374,10 +367,12 @@ def train_model(model_id, datasets):
         )
         # new_model.push_to_hub("yvelos/Tsotsallm-adapter")
         print(
-            f"Nombre de paramètres du modèle fusionné : {model_fine.num_parameters()}")
+            f"Nombre de paramètres du modèle fine tune : {model_fine.num_parameters()}")
         # @title Merge LoRa and Base Model
 
         merged_model = model_fine.merge_and_unload()
+        print(
+            f"Nombre de paramètres du modèle fusionee: {model_fine.num_parameters()}")
         merged_model.generation_config.temperature = 0.1
         merged_model.generation_config.do_sample = True
         merged_model.generation_config.num_beams = 4
