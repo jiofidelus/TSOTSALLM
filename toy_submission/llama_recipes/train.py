@@ -382,8 +382,6 @@ def train_model(model_id, datasets):
         merged_model.push_to_hub(args.hf_rep)
         tokenizer.push_to_hub(args.hf_rep)
         th.cuda.empty_cache()
-
-        del new_model
         del merged_model
 
         print("===========END TO train model=====================")
