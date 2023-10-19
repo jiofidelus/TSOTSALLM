@@ -205,7 +205,7 @@ def train_model(model_id, datasets):
         # Batch size per GPU for training
         per_device_train_batch_size = args.per_device_train_batch_size
         # Number of update steps to accumulate the gradients
-        gradient_accumulation_steps = 1
+        gradient_accumulation_steps = 2
         # Enable gradient checkpointing
         gradient_checkpointing = args.gradient_checkpointing
         # Maximum gradient normal (gradient clipping)
@@ -365,7 +365,7 @@ def train_model(model_id, datasets):
         gc.collect()
 
         # @title Reload the trained and saved model and merge it then we can save the whole model
-        new_model = AutoPeftModelForCausalLM.from_pretrained(
+        model_fine = AutoPeftModelForCausalLM.from_pretrained(
             args.output_dir,
             low_cpu_mem_usage=True,
             return_dict=True,
@@ -374,10 +374,10 @@ def train_model(model_id, datasets):
         )
         # new_model.push_to_hub("yvelos/Tsotsallm-adapter")
         print(
-            f"Nombre de paramètres du modèle fusionné : {new_model.num_parameters()}")
+            f"Nombre de paramètres du modèle fusionné : {model_fine.num_parameters()}")
         # @title Merge LoRa and Base Model
 
-        merged_model = new_model.merge_and_unload()
+        merged_model = model_fine.merge_and_unload()
         merged_model.generation_config.temperature = 0.1
         merged_model.generation_config.do_sample = True
         merged_model.generation_config.num_beams = 4
@@ -392,9 +392,10 @@ def train_model(model_id, datasets):
         # @title Push Merged Model to the Hub
         merged_model.push_to_hub(args.hf_rep)
         tokenizer.push_to_hub(args.hf_rep)
-        th.cuda.empty_cache()
         del merged_model
+        del model_fine
 
+        th.cuda.empty_cache()
         print("===========END TO train model=====================")
     return tokenizer
 
