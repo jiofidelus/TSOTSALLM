@@ -158,12 +158,12 @@ def train_model(model_id, datasets):
         elif dataset.get_type() == 'bbq':
             formating_function = dataset.prepare_bbq_scenario
 
-        if len(datasets.dataset) <= 1000:
-            args.per_device_train_batch_size = 2
-        elif len(datasets.dataset) >= 1000 and len(datasets.dataset) <= 10000:
-            args.per_device_train_batch_size = 4
-        elif len(datasets.dataset) >= 10000 and len(datasets.dataset) <= 400000:
-            args.per_device_train_batch_size = 8
+        # if len(dataset.get_dataset()) <= 1000:
+        #     args.per_device_train_batch_size = 2
+        # elif len(dataset.get_dataset()) >= 1000 and len(datasets.dataset) <= 10000:
+        #     args.per_device_train_batch_size = 4
+        # elif len(dataset.get_dataset()) >= 10000 and len(datasets.dataset) <= 400000:
+        #     args.per_device_train_batch_size = 8
         if i == 0:
             model_id = model_id
         else:
@@ -269,6 +269,9 @@ def train_model(model_id, datasets):
             return_dict=True,
             torch_dtype=th.float16)
 
+        print(
+            f"Nombre de paramètres du modèle de base : {model.num_parameters()}")
+
         # @title Load the tokenizer
         tokenizer = AutoTokenizer.from_pretrained(
             model_id, trust_remote_code=True)
@@ -370,7 +373,8 @@ def train_model(model_id, datasets):
             device_map=device_map
         )
         # new_model.push_to_hub("yvelos/Tsotsallm-adapter")
-
+        print(
+            f"Nombre de paramètres du modèle fusionné : {new_model.num_parameters()}")
         # @title Merge LoRa and Base Model
 
         merged_model = new_model.merge_and_unload()
