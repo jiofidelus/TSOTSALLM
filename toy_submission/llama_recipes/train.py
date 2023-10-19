@@ -157,6 +157,13 @@ def train_model(model_id, datasets):
             formating_function = dataset.prepare_summerization_scenario
         elif dataset.get_type() == 'bbq':
             formating_function = dataset.prepare_bbq_scenario
+
+        if len(datasets.dataset) <= 1000:
+            args.per_device_train_batch_size = 2
+        elif len(datasets.dataset) >= 1000 and len(datasets.dataset) <= 10000:
+            args.per_device_train_batch_size = 4
+        elif len(datasets.dataset) >= 10000 and len(datasets.dataset) <= 400000:
+            args.per_device_train_batch_size = 8
         if i == 0:
             model_id = model_id
         else:
