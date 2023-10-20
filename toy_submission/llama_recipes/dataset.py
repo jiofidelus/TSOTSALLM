@@ -132,7 +132,7 @@ class TsotsaDataset:
                     for data in reader:
                         self.dataset.append(data)
 
-        self.dataset = self.dataset[:5000]
+        self.dataset = self.dataset[:1500]
         # print(self.dataset.columns)
         print("Size of dataset", len(self.dataset))
         return self.dataset

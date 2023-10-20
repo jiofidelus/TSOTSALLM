@@ -123,19 +123,19 @@ def loginHub():
 loginHub()
 
 # BB Scenario QA
-lima = TsotsaDataset(split="train", type_dataset="bb")
+lima = TsotsaDataset(split="train[:20%]", type_dataset="bb")
 lima._load_lima()
-dolly = TsotsaDataset(split="train[:40%]", type_dataset="bb")
+dolly = TsotsaDataset(split="train[:10%]", type_dataset="bb")
 dolly._load_dolly()
 # truthfull QA
-ai2_arc = TsotsaDataset(split="train[:50%]", type_dataset="TruthfullQA")
+ai2_arc = TsotsaDataset(split="train[:10%]", type_dataset="TruthfullQA")
 ai2_arc._load_ai2_arc()
-common_sense = TsotsaDataset(split="train[:50%]", type_dataset="TruthfullQA")
+common_sense = TsotsaDataset(split="train[:10%]", type_dataset="TruthfullQA")
 common_sense._load_commonsense_qa()
 # Summary Scenario QA
 cnn_dailymail = TsotsaDataset(split="train[:1%]", type_dataset='summary')
 # cnn_dailymail._load_cnn_dailymail()
-xsum = TsotsaDataset(split="train[:5%]", type_dataset='summary')
+xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary')
 xsum._load_xsum()
 # BBQ scenario
 bbq = TsotsaDataset(split="", type_dataset='bbq')
