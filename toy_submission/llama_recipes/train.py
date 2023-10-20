@@ -380,68 +380,36 @@ def train_model(model_id, datasets):
         gc.collect()
 
         # @title Reload the trained and saved model and merge it then we can save the whole model
-        model_fine = AutoPeftModelForCausalLM.from_pretrained(
-            args.output_dir,
-            low_cpu_mem_usage=True,
-            return_dict=True,
-            torch_dtype=th.float16,
-            device_map=device_map,
-            is_trainable=True
-        )
-
-        # new_model.push_to_hub("yvelos/Tsotsallm-adapter")
-        print(
-            f"Nombre de paramètres du modèle fine tune : {model_fine.num_parameters()}")
-        # @title Merge LoRa and Base Model
-
-        merged_model = model_fine.merge_and_unload()
-        print(
-            f"Nombre de paramètres du modèle fusionee: {model_fine.num_parameters()}")
-        merged_model.generation_config.temperature = 0.1
-        merged_model.generation_config.do_sample = True
-        merged_model.generation_config.num_beams = 4
-        merged_model.generation_config._name_or_path = 'merged_model'
-        # # config json
-        merged_model.config.pretraining_tp = 1
-        merged_model.config.temperature = 0.1
-        merged_model.config.do_sample = True
-        merged_model.config._name_or_path = 'merged_model'
-        # save the merge model
-        tokenizer = AutoTokenizer.from_pretrained(args.output_dir)
-        merged_model.save_pretrained(f"merged_model")
-        tokenizer.save_pretrained("merged_model")
-
-        with open(f'Logs.txt', 'w') as f:
-            f.write(
-                "=============== Model Fine tuning infos========================\n")
-            f.write(f"Model name: {model_fine}\n")
-            f.write(f"Model parameters: {model_fine.num_parameters()}\n")
-            f.write(f"Model config:\n {model_fine.config}\n")
-            f.write(f"=============== Model merged infos========================\n")
-            f.write(f"Model name: {merged_model}\n")
-            f.write(f"Model parameters: {merged_model.num_parameters()}\n")
-            f.write(f"Model config:\n {merged_model.config}\n")
-
-            f.write(
-                f"=============== END TO train model========================\n\n\n")
-        model = AutoModelForCausalLM.from_pretrained(
+        new_model = AutoModelForCausalLM.from_pretrained(
             args.output_dir,
             low_cpu_mem_usage=True,
             return_dict=True,
             torch_dtype=th.float16,
             device_map={'': 0}
         )
-        tokenizer = AutoTokenizer.from_pretrained('yvelos/Tes')
-        print(" Push Model to the Hub")
-        model.push_to_hub("yvelos/Tes")
-        tokenizer.push_to_hub('yvelos/Tes')
+        tokenizer = AutoTokenizer.from_pretrained(args.output_dir)
+
+        # save the merge model
+        new_model.push_to_hub("yvelos/Tes")
+        tokenizer.push_to_hub("yvelos/Tes")
+
+        with open(f'Logs.txt', 'w') as f:
+            f.write(
+                "=============== Model Fine tuning infos========================\n")
+            f.write(f"Model name: {new_model}\n")
+            f.write(f"Model parameters: {new_model.num_parameters()}\n")
+            f.write(f"Model config:\n {new_model.config}\n")
+            # f.write(f"=============== Model merged infos========================\n")
+            # f.write(f"Model name: {merged_model}\n")
+            # f.write(f"Model parameters: {merged_model.num_parameters()}\n")
+            # f.write(f"Model config:\n {merged_model.config}\n")
+            f.write(
+                f"=============== END TO train model========================\n\n\n")
 
         # @title Push Merged Model to the Hub
         # merged_model.push_to_hub(args.hf_rep)
         # tokenizer.push_to_hub(args.hf_rep)
-        del merged_model
-        del model_fine
-        del model
+        del new_model
         th.cuda.empty_cache()
         print("===========END TO train model=====================")
     return tokenizer
@@ -455,18 +423,41 @@ def main1():
     datasets = [lima, dolly, bbq, ai2_arc]
     tokenizer = train_model(
         datasets=datasets, model_id=args.model_name)
-    model = AutoModelForCausalLM.from_pretrained(
-        "yvelos/Tes",
+
+    model_fine = AutoPeftModelForCausalLM.from_pretrained(
+        'yvelos/Tes',
         low_cpu_mem_usage=True,
         return_dict=True,
         torch_dtype=th.float16,
-        device_map={'': 0}
+        device_map={'': 0},
+        is_trainable=True
     )
 
-    # model.push_to_hub(args.hf_rep)
+    print(
+        f"Nombre de paramètres du modèle fine tune : {model_fine.num_parameters()}")
+    # @title Merge LoRa and Base Model
 
+    merged_model = model_fine.merge_and_unload()
+    print(
+        f"Nombre de paramètres du modèle fusionee: {model_fine.num_parameters()}")
+    merged_model.generation_config.temperature = 0.1
+    merged_model.generation_config.do_sample = True
+    merged_model.generation_config.num_beams = 4
+    merged_model.generation_config._name_or_path = 'merged_model'
+    # # config json
+    merged_model.config.pretraining_tp = 1
+    merged_model.config.temperature = 0.1
+    merged_model.config.do_sample = True
+    merged_model.config._name_or_path = 'Tsotsallm'
+
+    merged_model.push_to_hub("yvelos/Tsotsallm-adapter")
+    tokenizer.push_to_hub("yvelos/Tsotsallm-adapter")
     print(
         f"End of training, the model is saved in {args.output_dir} and push to the hub")
+
+    del merged_model
+    del model_fine
+    th.cuda.empty_cache()
 
 
 if __name__ == "__main__":
