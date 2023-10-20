@@ -67,7 +67,7 @@ def argsparser():
     parser.add_argument("--split", type=str, default="train[:10%]")
     parser.add_argument("--hf_rep", type=str, required=True,
                         help="HuggingFace repository")
-    parser.add_argument("--lr", type=float, default=2e-16,
+    parser.add_argument("--lr", type=float, default=2e-05,
                         help="Learning rate that allow to ajust model weight")
     parser.add_argument("--epochs", type=int, default=3,
                         help="chunk data to train it")
