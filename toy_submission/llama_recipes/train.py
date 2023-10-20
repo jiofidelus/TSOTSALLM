@@ -123,15 +123,15 @@ def loginHub():
 loginHub()
 
 # BB Scenario QA
-lima = TsotsaDataset(split="train[:20%]", type_dataset="bb", name='GAIR/lima')
+lima = TsotsaDataset(split="train[:5%]", type_dataset="bb", name='GAIR/lima')
 lima._load_lima()
 dolly = TsotsaDataset(
-    split="train[:15%]", type_dataset="bb", name='databricks/databricks-dolly-15k')
+    split="train[:1%]", type_dataset="bb", name='databricks/databricks-dolly-15k')
 dolly._load_dolly()
 # truthfull QA
 ai2_arc = TsotsaDataset(
     split="train[:10%]", type_dataset="TruthfullQA", name="ai2_arc")
-# ai2_arc._load_ai2_arc()
+ai2_arc._load_ai2_arc()
 common_sense = TsotsaDataset(
     split="train[:10%]", type_dataset="TruthfullQA", name="commonsense_qa")
 # common_sense._load_commonsense_qa()
@@ -144,7 +144,7 @@ xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary', name="xsum")
 # BBQ scenario
 bbq = TsotsaDataset(split="", type_dataset='bbq',
                     name="category: {Age, Disability_status, Physical_apparence, Religion, Sexual_orientation}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
-# bbq._load_bbq()
+bbq._load_bbq()
 
 
 def train_model(model_id, datasets):
@@ -299,7 +299,8 @@ def train_model(model_id, datasets):
             lora_dropout=lora_dropout,
             r=lora_r,
             bias="none",
-            task_type="CAUSAL_LM"
+            task_type="CAUSAL_LM",
+            target_modules=[]
         )
         # @title Define parameters in TrainingArguments
         args_training = TrainingArguments(
@@ -386,7 +387,8 @@ def train_model(model_id, datasets):
             low_cpu_mem_usage=True,
             return_dict=True,
             torch_dtype=th.float16,
-            device_map=device_map
+            device_map=device_map,
+            is_trainable=True
         )
 
         # new_model.push_to_hub("yvelos/Tsotsallm-adapter")
@@ -407,6 +409,7 @@ def train_model(model_id, datasets):
         merged_model.config.do_sample = True
         merged_model.config._name_or_path = 'merged_model'
         # save the merge model
+        tokenizer = AutoTokenizer.from_pretrained(merged_model)
         merged_model.save_pretrained(f"merged_model")
         tokenizer.save_pretrained("merged_model")
 
@@ -439,7 +442,7 @@ def main1():
         Start training our model By loading the dataset.
     """)
     # datasets = [lima, dolly, ai2_arc, common_sense, xsum, cnn_dailymail,bbq]
-    datasets = [lima, dolly]
+    datasets = [lima, dolly, bbq, ai2_arc]
     tokenizer = train_model(
         datasets=datasets, model_id=args.model_name)
     model = AutoModelForCausalLM.from_pretrained(
