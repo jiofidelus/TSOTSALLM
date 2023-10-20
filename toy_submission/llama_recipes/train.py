@@ -67,7 +67,7 @@ def argsparser():
     parser.add_argument("--split", type=str, default="train[:10%]")
     parser.add_argument("--hf_rep", type=str, required=True,
                         help="HuggingFace repository")
-    parser.add_argument("--lr", type=float, default=2e-15,
+    parser.add_argument("--lr", type=float, default=2e-16,
                         help="Learning rate that allow to ajust model weight")
     parser.add_argument("--epochs", type=int, default=3,
                         help="chunk data to train it")
@@ -123,22 +123,27 @@ def loginHub():
 loginHub()
 
 # BB Scenario QA
-lima = TsotsaDataset(split="train[:20%]", type_dataset="bb")
+lima = TsotsaDataset(split="train[:20%]", type_dataset="bb", name='GAIR/lima')
 lima._load_lima()
-dolly = TsotsaDataset(split="train[:15%]", type_dataset="bb")
+dolly = TsotsaDataset(
+    split="train[:15%]", type_dataset="bb", name='databricks/databricks-dolly-15k')
 dolly._load_dolly()
 # truthfull QA
-ai2_arc = TsotsaDataset(split="train[:10%]", type_dataset="TruthfullQA")
+ai2_arc = TsotsaDataset(
+    split="train[:10%]", type_dataset="TruthfullQA", name="ai2_arc")
 # ai2_arc._load_ai2_arc()
-common_sense = TsotsaDataset(split="train[:10%]", type_dataset="TruthfullQA")
+common_sense = TsotsaDataset(
+    split="train[:10%]", type_dataset="TruthfullQA", name="commonsense_qa")
 # common_sense._load_commonsense_qa()
 # Summary Scenario QA
-cnn_dailymail = TsotsaDataset(split="train[:1%]", type_dataset='summary')
+cnn_dailymail = TsotsaDataset(
+    split="train[:1%]", type_dataset='summary', name="cnn_dailymail")
 # cnn_dailymail._load_cnn_dailymail()
-xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary')
+xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary', name="xsum")
 # xsum._load_xsum()
 # BBQ scenario
-bbq = TsotsaDataset(split="", type_dataset='bbq')
+bbq = TsotsaDataset(split="", type_dataset='bbq',
+                    name="category: {Age, Disability_status, Physical_apparence, Religion, Sexual_orientation}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
 # bbq._load_bbq()
 
 
@@ -272,6 +277,17 @@ def train_model(model_id, datasets):
         tokenizer.padding_side = "right"
         tokenizer.name_or_path
 
+        with open(f'Logs.txt', 'w') as f:
+            f.write("TSOTSALLM Log file\n")
+            f.write("=============== Model infos========================")
+            f.write(f"Model name: {model_id}")
+            f.write(f"Model parameters: {model.num_parameters()}")
+
+            f.write(f"=============== Dataset infos========================")
+            f.write(f"Dataset: {dataset.get_type()}")
+            f.writer(f"Dataset Name: {dataset.get_name()}")
+            f.write(f"Len dataset: {len(train_data)}")
+
         # @title Lora config based on Qlora paper
         """
         The SFTTrainer supports a native integration with peft, which makes it
@@ -334,8 +350,15 @@ def train_model(model_id, datasets):
         start_time = time.time()
         print("Start Training", start_time)
         trainer.train()
-        print(f"Total training time {(time.time() - start_time) / 60:.2f} min")
-
+        print(trainer)
+        end_time = f"{(time.time() - start_time) / 60:.2f}"
+        print(f"Total training time {end_time} min")
+        with open(f'Logs.txt', 'w') as f:
+            f.write("=============== Training infos========================")
+            f.write(f"Start time training: {start_time}")
+            f.write(f"Metrics :\n {trainer.train()}")
+            f.write(
+                f"Total training time {end_time} min")
         # save metrics
         # trainer.save_metrics()
 
@@ -365,6 +388,7 @@ def train_model(model_id, datasets):
             torch_dtype=th.float16,
             device_map=device_map
         )
+
         # new_model.push_to_hub("yvelos/Tsotsallm-adapter")
         print(
             f"Nombre de paramètres du modèle fine tune : {model_fine.num_parameters()}")
@@ -376,15 +400,28 @@ def train_model(model_id, datasets):
         merged_model.generation_config.temperature = 0.1
         merged_model.generation_config.do_sample = True
         merged_model.generation_config.num_beams = 4
-        merged_model.generation_config._name_or_path = model_id
+        merged_model.generation_config._name_or_path = 'merged_model'
         # # config json
         merged_model.config.pretraining_tp = 1
         merged_model.config.temperature = 0.1
         merged_model.config.do_sample = True
-        merged_model.config._name_or_path = model_id
+        merged_model.config._name_or_path = 'merged_model'
         # save the merge model
         merged_model.save_pretrained(f"merged_model")
         tokenizer.save_pretrained("merged_model")
+
+        with open(f'Logs.txt', 'w') as f:
+            f.write("=============== Model Fine tuning infos========================")
+            f.write(f"Model name: {model_fine}")
+            f.write(f"Model parameters: {model_fine.num_parameters()}")
+            f.write(f"Model config:\n {model_fine.config}")
+            f.write(f"=============== Model merged infos========================")
+            f.write(f"Model name: {merged_model}")
+            f.write(f"Model parameters: {merged_model.num_parameters()}")
+            f.write(f"Model config:\n {merged_model.config}")
+
+            f.write(f"=============== END TO train model========================")
+            f.close()
 
         # @title Push Merged Model to the Hub
         # merged_model.push_to_hub(args.hf_rep)

@@ -34,11 +34,12 @@ def download_file(path_destination):
 
 
 class TsotsaDataset:
-    def __init__(self, split, type_dataset="bb"):
+    def __init__(self, split, type_dataset="bb", name="lima"):
         self.dataset = []
         self.dataset_id = ""
         self.split = split
         self.type_dataset = type_dataset
+        self.dataset_name = name
 
     # get size of the dataset
 
@@ -48,6 +49,9 @@ class TsotsaDataset:
     """
         getter methods
     """
+
+    def get_name(self):
+        return self.dataset_name
 
     def get_type(self):
         return self.type_dataset
