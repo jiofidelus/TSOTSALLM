@@ -380,7 +380,7 @@ def train_model(model_id, datasets):
         gc.collect()
 
         # @title Reload the trained and saved model and merge it then we can save the whole model
-        new_model = AutoModelForCausalLM.from_pretrained(
+        model_fine = AutoModelForCausalLM.from_pretrained(
             args.output_dir,
             low_cpu_mem_usage=True,
             return_dict=True,
@@ -390,15 +390,15 @@ def train_model(model_id, datasets):
         tokenizer = AutoTokenizer.from_pretrained(args.output_dir)
 
         # save the merge model
-        new_model.push_to_hub("yvelos/Tes")
+        model_fine.push_to_hub("yvelos/Tes")
         tokenizer.push_to_hub("yvelos/Tes")
 
         with open(f'Logs.txt', 'w') as f:
             f.write(
                 "=============== Model Fine tuning infos========================\n")
-            f.write(f"Model name: {new_model}\n")
-            f.write(f"Model parameters: {new_model.num_parameters()}\n")
-            f.write(f"Model config:\n {new_model.config}\n")
+            f.write(f"Model name: {model_fine}\n")
+            f.write(f"Model parameters: {model_fine.num_parameters()}\n")
+            f.write(f"Model config:\n {model_fine.config}\n")
             # f.write(f"=============== Model merged infos========================\n")
             # f.write(f"Model name: {merged_model}\n")
             # f.write(f"Model parameters: {merged_model.num_parameters()}\n")
@@ -409,7 +409,7 @@ def train_model(model_id, datasets):
         # @title Push Merged Model to the Hub
         # merged_model.push_to_hub(args.hf_rep)
         # tokenizer.push_to_hub(args.hf_rep)
-        del new_model
+        del model_fine
         th.cuda.empty_cache()
         print("===========END TO train model=====================")
     return tokenizer
