@@ -164,9 +164,9 @@ def train_model(model_id, datasets):
             formating_function = dataset.prepare_bbq_scenario
         if i == 0:
             model_id = model_id
+            i += 1
         else:
             model_id = "yvelos/Tes"
-            i += 1
 
         """
         bitsandBytes parameters
