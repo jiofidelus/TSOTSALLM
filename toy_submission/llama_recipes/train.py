@@ -67,7 +67,7 @@ def argsparser():
     parser.add_argument("--split", type=str, default="train[:10%]")
     parser.add_argument("--hf_rep", type=str, required=True,
                         help="HuggingFace repository")
-    parser.add_argument("--lr", type=float, default=1e-15,
+    parser.add_argument("--lr", type=float, default=2e-15,
                         help="Learning rate that allow to ajust model weight")
     parser.add_argument("--epochs", type=int, default=3,
                         help="chunk data to train it")
@@ -198,7 +198,7 @@ def train_model(model_id, datasets):
         # Batch size per GPU for training
         per_device_train_batch_size = args.per_device_train_batch_size
         # Number of update steps to accumulate the gradients
-        gradient_accumulation_steps = 2
+        gradient_accumulation_steps = 1
         # Enable gradient checkpointing
         gradient_checkpointing = args.gradient_checkpointing
         # Maximum gradient normal (gradient clipping)
