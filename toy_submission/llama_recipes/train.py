@@ -125,21 +125,21 @@ loginHub()
 # BB Scenario QA
 lima = TsotsaDataset(split="train[:20%]", type_dataset="bb")
 lima._load_lima()
-dolly = TsotsaDataset(split="train[:10%]", type_dataset="bb")
+dolly = TsotsaDataset(split="train[:15%]", type_dataset="bb")
 dolly._load_dolly()
 # truthfull QA
 ai2_arc = TsotsaDataset(split="train[:10%]", type_dataset="TruthfullQA")
-ai2_arc._load_ai2_arc()
+# ai2_arc._load_ai2_arc()
 common_sense = TsotsaDataset(split="train[:10%]", type_dataset="TruthfullQA")
-common_sense._load_commonsense_qa()
+# common_sense._load_commonsense_qa()
 # Summary Scenario QA
 cnn_dailymail = TsotsaDataset(split="train[:1%]", type_dataset='summary')
 # cnn_dailymail._load_cnn_dailymail()
 xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary')
-xsum._load_xsum()
+# xsum._load_xsum()
 # BBQ scenario
 bbq = TsotsaDataset(split="", type_dataset='bbq')
-bbq._load_bbq()
+# bbq._load_bbq()
 
 
 def train_model(model_id, datasets):
@@ -160,7 +160,7 @@ def train_model(model_id, datasets):
         if i == 0:
             model_id = model_id
         else:
-            model_id = args.hf_rep
+            model_id = "merged_model"
             i += 1
 
         """
@@ -376,17 +376,19 @@ def train_model(model_id, datasets):
         merged_model.generation_config.temperature = 0.1
         merged_model.generation_config.do_sample = True
         merged_model.generation_config.num_beams = 4
+        merged_model.generation_config._name_or_path = model_id
         # # config json
         merged_model.config.pretraining_tp = 1
         merged_model.config.temperature = 0.1
         merged_model.config.do_sample = True
+        merged_model.config._name_or_path = model_id
         # save the merge model
-        # merged_model.save_pretrained(f"merged_model{i}")
-        # tokenizer.save_pretrained("merged_model")
+        merged_model.save_pretrained(f"merged_model")
+        tokenizer.save_pretrained("merged_model")
 
         # @title Push Merged Model to the Hub
-        merged_model.push_to_hub(args.hf_rep)
-        tokenizer.push_to_hub(args.hf_rep)
+        # merged_model.push_to_hub(args.hf_rep)
+        # tokenizer.push_to_hub(args.hf_rep)
         del merged_model
         del model_fine
 
@@ -400,7 +402,7 @@ def main1():
         Start training our model By loading the dataset.
     """)
     # datasets = [lima, dolly, ai2_arc, common_sense, xsum, cnn_dailymail,bbq]
-    datasets = [lima, dolly, ai2_arc, common_sense, xsum, bbq]
+    datasets = [lima, dolly]
     tokenizer = train_model(
         datasets=datasets, model_id=args.model_name)
     model = AutoModelForCausalLM.from_pretrained(
@@ -411,8 +413,8 @@ def main1():
         device_map={'': 0}
     )
     print(" Push Model to the Hub")
-    model.push_to_hub("yvelos/Tsotsallm-adapter")
-    tokenizer.push_to_hub('yvelos/Tsotsallm-adapter')
+    model.push_to_hub("yvelos/Tes")
+    tokenizer.push_to_hub('yvelos/Tes')
     # model.push_to_hub(args.hf_rep)
 
     print(
