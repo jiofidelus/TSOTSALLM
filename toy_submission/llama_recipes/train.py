@@ -165,7 +165,7 @@ def train_model(model_id, datasets):
         if i == 0:
             model_id = model_id
         else:
-            model_id = "merged_model"
+            model_id = "yvelos/Tes"
             i += 1
 
         """
@@ -279,14 +279,14 @@ def train_model(model_id, datasets):
 
         with open(f'Logs.txt', 'w') as f:
             f.write("TSOTSALLM Log file\n")
-            f.write("=============== Model infos========================")
-            f.write(f"Model name: {model_id}")
-            f.write(f"Model parameters: {model.num_parameters()}")
+            f.write("=============== Model infos========================\n")
+            f.write(f"Model name: {model_id}\n")
+            f.write(f"Model parameters: {model.num_parameters()}\n")
 
-            f.write(f"=============== Dataset infos========================")
-            f.write(f"Dataset: {dataset.get_type()}")
-            f.writer(f"Dataset Name: {dataset.get_name()}")
-            f.write(f"Len dataset: {len(train_data)}")
+            f.write(f"=============== Dataset infos========================\n")
+            f.write(f"Dataset: {dataset.get_type()}\n")
+            f.write(f"Dataset Name: {dataset.get_name()}\n")
+            f.write(f"Len dataset: {len(train_data)}\n")
 
         # @title Lora config based on Qlora paper
         """
@@ -299,8 +299,7 @@ def train_model(model_id, datasets):
             lora_dropout=lora_dropout,
             r=lora_r,
             bias="none",
-            task_type="CAUSAL_LM",
-            target_modules=[]
+            task_type="CAUSAL_LM"
         )
         # @title Define parameters in TrainingArguments
         args_training = TrainingArguments(
@@ -350,16 +349,15 @@ def train_model(model_id, datasets):
         """
         start_time = time.time()
         print("Start Training", start_time)
-        trainer.train()
-        print(trainer)
-        end_time = f"{(time.time() - start_time) / 60:.2f}"
-        print(f"Total training time {end_time} min")
         with open(f'Logs.txt', 'w') as f:
-            f.write("=============== Training infos========================")
-            f.write(f"Start time training: {start_time}")
-            f.write(f"Metrics :\n {trainer.train()}")
+            f.write("=============== Training infos========================\n")
+            f.write(f"Start time training: {start_time}\n")
+            f.write(f"Metrics :\n {trainer.train()}\n")
+            end_time = f"{(time.time() - start_time) / 60:.2f}"
             f.write(
-                f"Total training time {end_time} min")
+                f"Total training time {end_time} min\n")
+
+        print(f"Total training time {end_time} min")
         # save metrics
         # trainer.save_metrics()
 
@@ -409,29 +407,41 @@ def train_model(model_id, datasets):
         merged_model.config.do_sample = True
         merged_model.config._name_or_path = 'merged_model'
         # save the merge model
-        tokenizer = AutoTokenizer.from_pretrained(merged_model)
+        tokenizer = AutoTokenizer.from_pretrained(args.output_dir)
         merged_model.save_pretrained(f"merged_model")
         tokenizer.save_pretrained("merged_model")
 
         with open(f'Logs.txt', 'w') as f:
-            f.write("=============== Model Fine tuning infos========================")
-            f.write(f"Model name: {model_fine}")
-            f.write(f"Model parameters: {model_fine.num_parameters()}")
-            f.write(f"Model config:\n {model_fine.config}")
-            f.write(f"=============== Model merged infos========================")
-            f.write(f"Model name: {merged_model}")
-            f.write(f"Model parameters: {merged_model.num_parameters()}")
-            f.write(f"Model config:\n {merged_model.config}")
+            f.write(
+                "=============== Model Fine tuning infos========================\n")
+            f.write(f"Model name: {model_fine}\n")
+            f.write(f"Model parameters: {model_fine.num_parameters()}\n")
+            f.write(f"Model config:\n {model_fine.config}\n")
+            f.write(f"=============== Model merged infos========================\n")
+            f.write(f"Model name: {merged_model}\n")
+            f.write(f"Model parameters: {merged_model.num_parameters()}\n")
+            f.write(f"Model config:\n {merged_model.config}\n")
 
-            f.write(f"=============== END TO train model========================")
-            f.close()
+            f.write(
+                f"=============== END TO train model========================\n\n\n")
+        model = AutoModelForCausalLM.from_pretrained(
+            args.output_dir,
+            low_cpu_mem_usage=True,
+            return_dict=True,
+            torch_dtype=th.float16,
+            device_map={'': 0}
+        )
+        tokenizer = AutoTokenizer.from_pretrained('yvelos/Tes')
+        print(" Push Model to the Hub")
+        model.push_to_hub("yvelos/Tes")
+        tokenizer.push_to_hub('yvelos/Tes')
 
         # @title Push Merged Model to the Hub
         # merged_model.push_to_hub(args.hf_rep)
         # tokenizer.push_to_hub(args.hf_rep)
         del merged_model
         del model_fine
-
+        del model
         th.cuda.empty_cache()
         print("===========END TO train model=====================")
     return tokenizer
@@ -446,15 +456,13 @@ def main1():
     tokenizer = train_model(
         datasets=datasets, model_id=args.model_name)
     model = AutoModelForCausalLM.from_pretrained(
-        args.output_dir,
+        "yvelos/Tes",
         low_cpu_mem_usage=True,
         return_dict=True,
         torch_dtype=th.float16,
         device_map={'': 0}
     )
-    print(" Push Model to the Hub")
-    model.push_to_hub("yvelos/Tes")
-    tokenizer.push_to_hub('yvelos/Tes')
+
     # model.push_to_hub(args.hf_rep)
 
     print(
