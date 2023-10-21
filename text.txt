@@ -1,0 +1,55 @@
+numpy
+openpyxl
+astropy
+tabulate
+# auto-gptq
+# optimum
+# peft>=0.5.0
+transformers>=4.34.0
+torch
+torchvision
+cattrs
+dacite
+importlib-resources
+Mako
+pyhocon
+retrying
+simple-slurm
+spacy
+tqdm
+zstandard
+sqlitedict
+bottle
+protobuf
+pymongo
+datasets
+pyarrow
+jsonlines
+nltk
+pyext
+rouge-score
+scipy
+uncertainty-calibration
+scikit-learn
+aleph-alpha-client
+anthropic
+icetk
+openai
+sentencepiece
+tiktoken
+tokenizers
+websocket-client
+google-api-python-client
+colorcet
+matplotlib
+seaborn
+numba
+pytrec_eval 
+sacrebleu
+gdown
+sympy
+xlrd
+scaleapi
+surge-api
+gunicorn
+# summ-eval

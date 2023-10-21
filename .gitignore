@@ -4,3 +4,4 @@ prod_env/
 test.*
 arxiv
 urls.txt
+venv

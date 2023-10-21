@@ -123,28 +123,37 @@ def loginHub():
 loginHub()
 
 # BB Scenario QA
-lima = TsotsaDataset(split="train[:80%]", type_dataset="bb", name='GAIR/lima')
+lima = TsotsaDataset(split="train[:85%]", type_dataset="bb", name='GAIR/lima')
 lima._load_lima()
 dolly = TsotsaDataset(
-    split="train[:20%]", type_dataset="bb", name='databricks/databricks-dolly-15k')
+    split="train[:50%]", type_dataset="bb", name='databricks/databricks-dolly-15k')
 dolly._load_dolly()
+
 # truthfull QA
 ai2_arc = TsotsaDataset(
-    split="train[:30%]", type_dataset="TruthfullQA", name="ai2_arc")
-ai2_arc._load_ai2_arc()
+    split="train", type_dataset="TruthfullQA", name="ai2_arc")
+# ai2_arc._load_ai2_arc()
 common_sense = TsotsaDataset(
-    split="train[:30%]", type_dataset="TruthfullQA", name="commonsense_qa")
-common_sense._load_commonsense_qa()
+    split="train", type_dataset="TruthfullQA", name="commonsense_qa")
+# common_sense._load_commonsense_qa()
+truth1 = TsotsaDataset(
+    split="validation", type_dataset="TruthfullQA", name="generation")
+# truth1._load_truthfulqa()
+truth2 = TsotsaDataset(
+    split="validation", type_dataset="TruthfullQA", name="multiple_choice")
+# truth2._load_truthfulqa1()
+
 # Summary Scenario QA
 cnn_dailymail = TsotsaDataset(
-    split="train[:1%]", type_dataset='summary', name="cnn_dailymail")
+    split="train[:10%]", type_dataset='summary', name="cnn_dailymail")
 cnn_dailymail._load_cnn_dailymail()
-xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary', name="xsum")
-xsum._load_xsum()
+xsum = TsotsaDataset(split="train[:10%]", type_dataset='summary', name="xsum")
+# xsum._load_xsum()
+
 # BBQ scenario
 bbq = TsotsaDataset(split="", type_dataset='bbq',
                     name="category: {Age, Disability_status, Physical_apparence, Religion, Sexual_orientation}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
-bbq._load_bbq()
+# bbq._load_bbq()
 
 
 def train_model(model_id, datasets):
@@ -416,8 +425,9 @@ def main1():
     print("""
         Start training our model By loading the dataset.
     """)
-    datasets = [lima, dolly, ai2_arc, common_sense, xsum, cnn_dailymail, bbq]
-    # datasets = [lima, dolly, bbq, ai2_arc]
+    # datasets = [lima, dolly, ai2_arc, common_sense,
+    #             truth1, truth2, xsum, cnn_dailymail, bbq]
+    datasets = [lima, dolly]
     tokenizer = train_model(
         datasets=datasets, model_id=args.model_name)
 

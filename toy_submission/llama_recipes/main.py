@@ -29,7 +29,7 @@ load_dotenv()
 login(token='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')
 
 model = load_model('meta-llama/Llama-2-7b-hf', False)
-model = load_peft_model(model, 'yvelos/Tsotsallm-adapter')
+model = load_peft_model(model, 'yvelos/Tes')
 
 model.eval()
 

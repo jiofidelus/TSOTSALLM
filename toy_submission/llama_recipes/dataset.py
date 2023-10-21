@@ -108,6 +108,18 @@ class TsotsaDataset:
         self.dataset = load_dataset(self.dataset_id, split=self.split)
         return self.dataset
 
+    def _load_truthfulqa(self):
+        self.dataset_id = "truthful_qa"
+        self.dataset = load_dataset(
+            self.dataset_id, split='validation', name='generation')
+        return self.dataset
+
+    def _load_truthfulqa1(self):
+        self.dataset_id = "truthful_qa"
+        self.dataset = load_dataset(
+            self.dataset_id, split='validation', name='multiple_choice')
+        return self.dataset
+
     """ 
         Summarization 
     """
@@ -136,7 +148,7 @@ class TsotsaDataset:
                     for data in reader:
                         self.dataset.append(data)
 
-        self.dataset = self.dataset[:5000]
+        self.dataset = self.dataset[:10000]
         # print(self.dataset.columns)
         print("Size of dataset", len(self.dataset))
         return self.dataset
@@ -166,25 +178,65 @@ class TsotsaDataset:
         return string
 
     def prepare_truthfulqa_scenario(self, sample):
-        sample_dict = sample['choices']
-        text_list = sample_dict['text']
-        label_list = sample_dict['label']
+
         formatted_list = []
-        for i in range(len(text_list)):
-            formatted_list.append(f"{label_list[i]}. {text_list[i]} \n\t")
+        if 'best_answer' in sample:
+            choices = sample['correct_answers']
+            best_answer = sample['best_answer']
+            sample['answerKey'] = best_answer
+            del sample['best_answer']
+            label = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+            size_choices = len(choices)
+            reference = {
+                'label': label[:size_choices],
+                'text': choices
+            }
+            for i in range(len(reference['label'])):
+                if best_answer == choices[i]:
+                    sample['answerKey'] = f"{reference['label'][i]}. {sample['answerKey']}"
+                formatted_list.append(
+                    f"{reference['label'][i]}. {reference['text'][i]} \n\t")
+
+        elif 'mc2_targets' in sample:
+            sample_dict = sample['mc2_targets']
+            choices = sample_dict['choices']
+            label_list = sample_dict['labels']
+            label = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+            size_choices = len(choices)
+            sample['answerKey'] = []
+
+            reference = {
+                'label': label[:size_choices],
+                'text': choices
+            }
+
+            for i in range(len(reference['label'])):
+                if label_list[i] == 1:
+                    sample['answerKey'].append(f"{reference['label'][i]}")
+
+                formatted_list.append(
+                    f"{reference['label'][i]}. {reference['text'][i]} \n\t")
+            sample['answerKey'] = ', '.join(sample['answerKey'])
+        else:
+            sample_dict = sample['choices']
+            text_list = sample_dict['text']
+            label_list = sample_dict['label']
+            for i in range(len(text_list)):
+                formatted_list.append(f"{label_list[i]}. {text_list[i]} \n\t")
         string = f"""
         ### Welcome in your assistant!!!!!!!
             
         ### INSTRUCTIONS:
+        given a question and multi choices options, you will get the correct answer\n
         {sample['question']}
             
-        ### Choices
         {"".join(formatted_list)}
 
         ### Answer
         {sample['answerKey']}
 
         """
+        print(string)
         return string
 
     def prepare_summerization_scenario(self, sample):
@@ -199,11 +251,11 @@ class TsotsaDataset:
             ### Welcome in your assistant!!!!!!!
             
             ### INSTRUCTIONS:
-            
+            please give an input a document or article to recive the his summary
             {sample['document']}
 
 
-            ### Answer
+            ### Summary
             {sample['summary']}
 
         """
@@ -251,8 +303,7 @@ class TsotsaDataset:
             
         ### INSTRUCTIONS:  
         {question}
-            
-        ### Choices
+        
         {''.join(choices)}
             
         #### Category
@@ -264,37 +315,3 @@ class TsotsaDataset:
         """
         # print(string)
         return string
-
-
-# download_file(path)
-
-# tsotsa = TsotsaDataset('train')
-# tsotsa._load_lima()
-# print(tsotsa.dataset)
-
-# bbq_dataset = tsotsa._load_bbq()
-# tsotsa.prepare_bbq_scenario(bbq_dataset[randrange(len(bbq_dataset))])
-
-# print(tsotsa._load_lima())
-
-# BB dataset
-# dataset_lima = tsotsa._load_lima()
-# dataset_dolly = tsotsa._load_dolly()
-# tsotsa.prepare_bb_scenario(dataset_lima[randrange(len(dataset_lima))])
-# tsotsa.prepare_bb_scenario(dataset_dolly[randrange(len(dataset_dolly))])
-
-# Summarization
-# xum_dataset = tsotsa._load_xsum()
-# print(xum_dataset)
-# cnn_dailymail_dataset = tsotsa._load_cnn_dailymail()
-# print(cnn_dailymail_dataset)
-
-# TruthfulQA dataset
-# ai2_arc_dataset = tsotsa._load_ai2_arc()
-# com_qa_dataset = tsotsa._load_commonsense_qa()
-# tsotsa.prepare_truthfulqa_scenario(ai2_arc_dataset.iloc[randrange(len(ai2_arc_dataset))])
-
-
-# print(tsotsa._load_databricks())
-# print(tsotsa._load_oasst1())
-# print(tsotsa._load_redpajama())
