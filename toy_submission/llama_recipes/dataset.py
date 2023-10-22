@@ -233,7 +233,7 @@ class TsotsaDataset:
             
         ### INSTRUCTIONS:
         given a question and multi choices options, you will get the correct answer\n
-        {sample['question']}
+        Question: {sample['question']}
             
         {"".join(formatted_list)}
 
