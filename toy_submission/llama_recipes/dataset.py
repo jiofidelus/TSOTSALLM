@@ -1,5 +1,4 @@
 from datasets import load_dataset, Dataset, Features, Value, ClassLabel
-from random import randrange
 import pandas as pd
 import os
 import requests
@@ -80,7 +79,6 @@ class TsotsaDataset:
     def _load_oasst1(self):
         self.dataset_id = "OpenAssistant/oasst1"
         self.dataset = load_dataset(self.dataset_id, split=self.split)
-
         return self.dataset
 
     # summerization dataset
@@ -166,13 +164,20 @@ class TsotsaDataset:
             sample['instruction'] = instruction
             sample['response'] = response
 
+        # if 'role' in sample:
+        #     conversations = sample['text']
+        #     for i in range(len(conversations)):
+        #         if sample['role'] == 'assistant':
+        #             sample['response'] = conversations[i]
+        #         else:
+        #             sample['instruction'] = conversations[i]
         string = f"""
         ### Welcome in your assistant!!!!!!!
                 
         ### INSTRUCTIONS:
         \n{sample['instruction']}
                 
-        ### Answer
+        ### ANSWER:
         \n{sample['response']}
         """
         return string

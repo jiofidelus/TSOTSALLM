@@ -132,16 +132,16 @@ dolly._load_dolly()
 # truthfull QA
 ai2_arc = TsotsaDataset(
     split="train", type_dataset="TruthfullQA", name="ai2_arc")
-# ai2_arc._load_ai2_arc()
+ai2_arc._load_ai2_arc()
 common_sense = TsotsaDataset(
     split="train", type_dataset="TruthfullQA", name="commonsense_qa")
-# common_sense._load_commonsense_qa()
+common_sense._load_commonsense_qa()
 truth1 = TsotsaDataset(
     split="validation", type_dataset="TruthfullQA", name="generation")
-# truth1._load_truthfulqa()
+truth1._load_truthfulqa()
 truth2 = TsotsaDataset(
     split="validation", type_dataset="TruthfullQA", name="multiple_choice")
-# truth2._load_truthfulqa1()
+truth2._load_truthfulqa1()
 
 # Summary Scenario QA
 cnn_dailymail = TsotsaDataset(
@@ -153,11 +153,11 @@ xsum = TsotsaDataset(split="train[:10%]", type_dataset='summary', name="xsum")
 # BBQ scenario
 bbq = TsotsaDataset(split="", type_dataset='bbq',
                     name="category: {Age, Disability_status, Physical_apparence, Religion, Sexual_orientation}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
-# bbq._load_bbq()
+bbq._load_bbq()
 
 
 def train_model(model_id, datasets):
-    i = 0
+    i = 1
     hf_model_rep = args.hf_rep
     device_map = {'': 0}
     new_model = args.output_dir
@@ -166,8 +166,10 @@ def train_model(model_id, datasets):
         for dataset in datasets:
             if dataset.get_type() == "bb":
                 formating_function = dataset.prepare_bb_scenario
+                args.epoch = 2
             elif dataset.get_type() == "TruthfullQA":
                 formating_function = dataset.prepare_truthfulqa_scenario
+                args.epoch = 4
             elif dataset.get_type() == "summary":
                 formating_function = dataset.prepare_summerization_scenario
             elif dataset.get_type() == 'bbq':
@@ -290,6 +292,7 @@ def train_model(model_id, datasets):
             f.write("TSOTSALLM Log file\n")
             f.write("=============== Model infos========================\n")
             f.write(f"Model name: {model_id}\n")
+            f.write(f"Model architecture: {model}\n")
             f.write(f"Model parameters: {model.num_parameters()}\n")
 
             f.write(f"=============== Dataset infos========================\n")
@@ -396,13 +399,20 @@ def train_model(model_id, datasets):
                 device_map={'': 0}
             )
             tokenizer = AutoTokenizer.from_pretrained(args.output_dir)
-
+            model_fine.generation_config.temperature = 0.1
+            model_fine.generation_config.do_sample = True
+            model_fine.generation_config.num_beams = 4
+            # # config json
+            model_fine.config.pretraining_tp = 1
+            model_fine.config.temperature = 0.1
+            model_fine.config.do_sample = True
             # save the merge model
             model_fine.push_to_hub("yvelos/Tes")
             tokenizer.push_to_hub("yvelos/Tes")
             f.write(
                 "=============== Model Fine tuning infos========================\n")
-            f.write(f"Model name: {model_fine}\n")
+            f.write(f"Model architecture: {args.output_dir}\n")
+            f.write(f"Model architecture: {model_fine}\n")
             f.write(f"Model parameters: {model_fine.num_parameters()}\n")
             f.write(f"Model config:\n {model_fine.config}\n")
             # f.write(f"=============== Model merged infos========================\n")
@@ -427,7 +437,7 @@ def main1():
     """)
     # datasets = [lima, dolly, ai2_arc, common_sense,
     #             truth1, truth2, xsum, cnn_dailymail, bbq]
-    datasets = [lima, dolly]
+    datasets = [ai2_arc, common_sense, truth1, truth2, bbq]
     tokenizer = train_model(
         datasets=datasets, model_id=args.model_name)
 
