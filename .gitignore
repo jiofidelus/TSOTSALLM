@@ -1,8 +1,9 @@
-toy_submission*.*
-benchmark_output/
-prod_env/
-test.*
-arxiv
-urls.txt
-venv
-text.txt
+__pycache__/
+venv/
+.env
+toy_submission*.zip
+oasst1.csv
+data
+test.py
+logs.txt
+text

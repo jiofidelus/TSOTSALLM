@@ -55,7 +55,8 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from trl import SFTTrainer
 import argparse
 import time
-from dataset import TsotsaDataset
+from dataset.custom_dataset import TsotsaDataset
+import shutil
 
 
 def argsparser():
@@ -126,7 +127,7 @@ loginHub()
 lima = TsotsaDataset(split="train[:85%]", type_dataset="bb", name='GAIR/lima')
 lima._load_lima()
 dolly = TsotsaDataset(
-    split="train[:50%]", type_dataset="bb", name='databricks/databricks-dolly-15k')
+    split="train[:20%]", type_dataset="bb", name='databricks/databricks-dolly-15k')
 dolly._load_dolly()
 
 # truthfull QA
@@ -145,9 +146,9 @@ truth2._load_truthfulqa1()
 
 # Summary Scenario QA
 cnn_dailymail = TsotsaDataset(
-    split="train[:10%]", type_dataset='summary', name="cnn_dailymail")
+    split="train[:1%]", type_dataset='summary', name="cnn_dailymail")
 cnn_dailymail._load_cnn_dailymail()
-xsum = TsotsaDataset(split="train[:10%]", type_dataset='summary', name="xsum")
+xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary', name="xsum")
 # xsum._load_xsum()
 
 # BBQ scenario
@@ -166,10 +167,11 @@ def train_model(model_id, datasets):
         for dataset in datasets:
             if dataset.get_type() == "bb":
                 formating_function = dataset.prepare_bb_scenario
-                args.epoch = 2
             elif dataset.get_type() == "TruthfullQA":
                 formating_function = dataset.prepare_truthfulqa_scenario
-                args.epoch = 4
+                args.epochs = 3
+                if dataset.get_name() == 'commonsense_qa':
+                    args.epochs = 2
             elif dataset.get_type() == "summary":
                 formating_function = dataset.prepare_summerization_scenario
             elif dataset.get_type() == 'bbq':
@@ -178,7 +180,8 @@ def train_model(model_id, datasets):
                 model_id = model_id
                 i += 1
             else:
-                model_id = "yvelos/Tes"
+                model_id = args.output_dir
+                i += 1
 
             """
             bitsandBytes parameters
@@ -359,12 +362,12 @@ def train_model(model_id, datasets):
             """
                 Start training our model by calling the train() method on our Trainer instance.
             """
-            start_time = time.time()
+            start_time = time.perf_counter()
             print("Start Training", start_time)
             f.write("=============== Training infos========================\n")
             f.write(f"Start time training: {start_time}\n")
             f.write(f"Metrics :\n {trainer.train()}\n")
-            end_time = f"{(time.time() - start_time) / 60:.2f}"
+            end_time = f"{time.perf_counter() - start_time :.2f}"
             f.write(
                 f"Total training time {end_time} min\n")
 
@@ -391,24 +394,25 @@ def train_model(model_id, datasets):
             gc.collect()
 
             # @title Reload the trained and saved model and merge it then we can save the whole model
-            model_fine = AutoModelForCausalLM.from_pretrained(
+            model_fine = AutoPeftModelForCausalLM.from_pretrained(
                 args.output_dir,
                 low_cpu_mem_usage=True,
                 return_dict=True,
                 torch_dtype=th.float16,
-                device_map={'': 0}
+                device_map={'': 0},
+                is_trainable=True
             )
             tokenizer = AutoTokenizer.from_pretrained(args.output_dir)
-            model_fine.generation_config.temperature = 0.1
+            model_fine.generation_config.temperature = 0.8
             model_fine.generation_config.do_sample = True
             model_fine.generation_config.num_beams = 4
             # # config json
             model_fine.config.pretraining_tp = 1
-            model_fine.config.temperature = 0.1
+            model_fine.config.temperature = 0.8
             model_fine.config.do_sample = True
             # save the merge model
-            model_fine.push_to_hub("yvelos/Tes")
-            tokenizer.push_to_hub("yvelos/Tes")
+            # model_fine.push_to_hub("yvelos/Tes")
+            # tokenizer.push_to_hub("yvelos/Tes")
             f.write(
                 "=============== Model Fine tuning infos========================\n")
             f.write(f"Model architecture: {args.output_dir}\n")
@@ -428,6 +432,25 @@ def train_model(model_id, datasets):
             del model_fine
             th.cuda.empty_cache()
             print("===========END TO train model=====================")
+
+            model_train_path = 'Tsotsallm'
+            log_path = 'Logs.txt'
+            log_path_save = '/content/drive/MyDrive/neurips_challenge/logs.txt'
+            model_train_path_save = '/content/drive/MyDrive/neurips_challenge/Tsotsallm'
+
+            if os.path.exists(model_train_path_save):
+                shutil.rmtree(model_train_path_save)
+                shutil.copytree(model_train_path, model_train_path_save)
+            else:
+                shutil.copytree(model_train_path, model_train_path_save)
+
+            if os.path.exists(log_path_save):
+                os.remove(log_path_save)
+                shutil.copy2(log_path, log_path_save)
+            else:
+                shutil.copy2(log_path, log_path_save)
+
+            # copy  train model to drive
     return tokenizer
 
 
@@ -435,42 +458,42 @@ def main1():
     print("""
         Start training our model By loading the dataset.
     """)
-    # datasets = [lima, dolly, ai2_arc, common_sense,
-    #             truth1, truth2, xsum, cnn_dailymail, bbq]
-    datasets = [ai2_arc, common_sense, truth1, truth2, bbq]
+    datasets = [lima, dolly, truth1, truth2,
+                common_sense, ai2_arc, bbq, xsum, cnn_dailymail]
+    # datasets = [ai2_arc, common_sense, truth1, truth2, bbq]
     tokenizer = train_model(
         datasets=datasets, model_id=args.model_name)
 
-    model_fine = AutoPeftModelForCausalLM.from_pretrained(
-        'yvelos/Tes',
-        low_cpu_mem_usage=True,
-        return_dict=True,
-        torch_dtype=th.float16,
-        device_map={'': 0},
-        is_trainable=True
-    )
+    # model_fine = AutoPeftModelForCausalLM.from_pretrained(
+    #     'yvelos/Tes',
+    #     low_cpu_mem_usage=True,
+    #     return_dict=True,
+    #     torch_dtype=th.float16,
+    #     device_map={'': 0},
+    #     is_trainable=True
+    # )
 
-    print(
-        f"Nombre de paramètres du modèle fine tune : {model_fine.num_parameters()}")
-    # @title Merge LoRa and Base Model
+    # print(
+    #     f"Nombre de paramètres du modèle fine tune : {model_fine.num_parameters()}")
+    # # @title Merge LoRa and Base Model
 
-    merged_model = model_fine.merge_and_unload()
-    print(
-        f"Nombre de paramètres du modèle fusionee: {model_fine.num_parameters()}")
-    merged_model.generation_config.temperature = 0.1
-    merged_model.generation_config.do_sample = True
-    merged_model.generation_config.num_beams = 4
-    merged_model.generation_config._name_or_path = 'merged_model'
-    # # config json
-    merged_model.config.pretraining_tp = 1
-    merged_model.config.temperature = 0.1
-    merged_model.config.do_sample = True
-    merged_model.config._name_or_path = 'Tsotsallm'
+    # merged_model = model_fine.merge_and_unload()
+    # print(
+    #     f"Nombre de paramètres du modèle fusionee: {model_fine.num_parameters()}")
+    # merged_model.generation_config.temperature = 0.1
+    # merged_model.generation_config.do_sample = True
+    # merged_model.generation_config.num_beams = 4
+    # merged_model.generation_config._name_or_path = 'merged_model'
+    # # # config json
+    # merged_model.config.pretraining_tp = 1
+    # merged_model.config.temperature = 0.1
+    # merged_model.config.do_sample = True
+    # merged_model.config._name_or_path = 'Tsotsallm'
 
-    merged_model.push_to_hub("yvelos/Tsotsallm-adapter")
-    tokenizer.push_to_hub("yvelos/Tsotsallm-adapter")
-    print(
-        f"End of training, the model is saved in {args.output_dir} and push to the hub")
+    # merged_model.push_to_hub("yvelos/Tsotsallm-adapter")
+    # tokenizer.push_to_hub("yvelos/Tsotsallm-adapter")
+    # print(
+    #     f"End of training, the model is saved in {args.output_dir} and push to the hub")
 
     del merged_model
     del model_fine

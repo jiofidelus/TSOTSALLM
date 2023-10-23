@@ -13,8 +13,7 @@ import time
 
 import torch
 from huggingface_hub import login
-from transformers import LlamaTokenizer
-from llama_recipes.inference.model_utils import load_model, load_peft_model
+from inference.models_utils import load_tokenizer, load_peft_model
 from dotenv import load_dotenv
 
 torch.set_float32_matmul_precision("high")
@@ -28,12 +27,12 @@ logging.basicConfig(level=logging.INFO)
 load_dotenv()
 login(token='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')
 
-model = load_model('meta-llama/Llama-2-7b-hf', False)
-model = load_peft_model(model, 'yvelos/Tes')
+# model = load_model('meta-llama/Llama-2-7b-hf', True)
+model = load_peft_model('yvelos/Tes')
 
 model.eval()
 
-tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Llama-2-7b')
+tokenizer = load_tokenizer('yvelos/Tes')
 
 LLAMA2_CONTEXT_LENGTH = 4096
 
