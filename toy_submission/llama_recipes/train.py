@@ -158,7 +158,7 @@ bbq._load_bbq()
 
 
 def train_model(model_id, datasets):
-    i = 1
+    i = 0
     hf_model_rep = args.hf_rep
     device_map = {'': 0}
     new_model = args.output_dir
@@ -180,7 +180,7 @@ def train_model(model_id, datasets):
                 model_id = model_id
                 i += 1
             else:
-                model_id = args.output_dir
+                model_id = new_model
                 i += 1
 
             """
@@ -458,46 +458,14 @@ def main1():
     print("""
         Start training our model By loading the dataset.
     """)
-    datasets = [lima, dolly, truth1, truth2,
-                common_sense, ai2_arc, bbq, xsum, cnn_dailymail]
+    
+    datasets = [lima, dolly, truth1, truth2,common_sense, ai2_arc, bbq, xsum, cnn_dailymail]
     # datasets = [ai2_arc, common_sense, truth1, truth2, bbq]
-    tokenizer = train_model(
-        datasets=datasets, model_id=args.model_name)
+    
+    # train_model(datasets=datasets, model_id=args.model_name)
 
-    # model_fine = AutoPeftModelForCausalLM.from_pretrained(
-    #     'yvelos/Tes',
-    #     low_cpu_mem_usage=True,
-    #     return_dict=True,
-    #     torch_dtype=th.float16,
-    #     device_map={'': 0},
-    #     is_trainable=True
-    # )
-
-    # print(
-    #     f"Nombre de paramètres du modèle fine tune : {model_fine.num_parameters()}")
-    # # @title Merge LoRa and Base Model
-
-    # merged_model = model_fine.merge_and_unload()
-    # print(
-    #     f"Nombre de paramètres du modèle fusionee: {model_fine.num_parameters()}")
-    # merged_model.generation_config.temperature = 0.1
-    # merged_model.generation_config.do_sample = True
-    # merged_model.generation_config.num_beams = 4
-    # merged_model.generation_config._name_or_path = 'merged_model'
-    # # # config json
-    # merged_model.config.pretraining_tp = 1
-    # merged_model.config.temperature = 0.1
-    # merged_model.config.do_sample = True
-    # merged_model.config._name_or_path = 'Tsotsallm'
-
-    # merged_model.push_to_hub("yvelos/Tsotsallm-adapter")
-    # tokenizer.push_to_hub("yvelos/Tsotsallm-adapter")
-    # print(
-    #     f"End of training, the model is saved in {args.output_dir} and push to the hub")
-
-    del merged_model
-    del model_fine
-    th.cuda.empty_cache()
+    from adapter_utils import add_adapters, model_push_to_hub
+    model = add_adapters(args.output_dir, args.model_name)
 
 
 if __name__ == "__main__":

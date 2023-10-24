@@ -20,14 +20,14 @@ def load_peft_model(model_id):
         low_cpu_mem_usage=True,
         return_dict=True,
         torch_dtype=th.float16,
-        device_map={'': 0}
+        device_map={'': 0},
+        is_trainable=True
     )
     return model
 
 
 def load_tokenizer(model_id):
     tokenizer = AutoTokenizer.from_pretrained(model_id)
-
     return tokenizer
 
 # Function to load the PeftModel for performance optimization
