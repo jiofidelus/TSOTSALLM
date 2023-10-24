@@ -7,11 +7,17 @@ def add_adapter(base_model_id, adapter_id):
     print(adapter_id)
     model = load_peft_model(base_model_id)
     peft_config = PeftConfig.from_pretrained(adapter_id)
-    
     model.add_adapter(base_model_id, peft_config)
+  
+    tokekenizer = load_tokenizer(base_model_id)
     # added_adapter = model.list_added_adapters()
     model.save_pretrained('model_finetuned')
-    return model
+    tokekenizer.save_pretrained('model_finetuned')
+    
+    import gc, torch
+    gc.collect()
+    del model
+    torch.cuda.empty_cache()
 
 
 def add_adapters(path_stored_adapter, base_model_id):
@@ -28,9 +34,8 @@ def add_adapters(path_stored_adapter, base_model_id):
                 shutil.rmtree(item_path)
                 print(item, " has successfully deleted")
             else:
-                model = add_adapter(base_model_id, item_path)
+                add_adapter(base_model_id, item_path)
     # added_adapter = model.list_added_adapters()
-    return model
 
 # push model to the hub
 def model_push_to_hub(model_id, repository_name):

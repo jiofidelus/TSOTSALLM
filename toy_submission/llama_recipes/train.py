@@ -70,7 +70,7 @@ def argsparser():
                         help="HuggingFace repository")
     parser.add_argument("--lr", type=float, default=2e-05,
                         help="Learning rate that allow to ajust model weight")
-    parser.add_argument("--epochs", type=int, default=3,
+    parser.add_argument("--epochs", type=int, default=2,
                         help="chunk data to train it")
     parser.add_argument("--output_dir", type=str, required=True,
                         help="name of the fine-tuned model")
@@ -159,28 +159,33 @@ bbq._load_bbq()
 
 def train_model(model_id, datasets):
     i = 0
+    
     hf_model_rep = args.hf_rep
     device_map = {'': 0}
-    new_model = args.output_dir
     # run list of all dataset
     with open(f'Logs.txt', 'w') as f:
         for dataset in datasets:
             if dataset.get_type() == "bb":
                 formating_function = dataset.prepare_bb_scenario
+                args.output_dir = f'{dataset.get_name()}_bb'
             elif dataset.get_type() == "TruthfullQA":
                 formating_function = dataset.prepare_truthfulqa_scenario
+                args.output_dir = f'{dataset.get_name()}_MCQ'
                 args.epochs = 3
                 if dataset.get_name() == 'commonsense_qa':
                     args.epochs = 2
             elif dataset.get_type() == "summary":
                 formating_function = dataset.prepare_summerization_scenario
+                args.output_dir = f'{dataset.get_name()}_summarization'
+                args.epochs = 1
             elif dataset.get_type() == 'bbq':
                 formating_function = dataset.prepare_bbq_scenario
+                args.output_dir = f'{dataset.get_name()}_bbq'
             if i == 0:
                 model_id = model_id
                 i += 1
             else:
-                model_id = new_model
+                model_id = args.output_dir
                 i += 1
 
             """
@@ -210,7 +215,7 @@ def train_model(model_id, datasets):
             TrainingArgument parameters
             """
             # Output directory where the model predictions and checkpoints will be stored
-            ouput_dir = new_model
+            ouput_dir = args.output_dir
             # number_of_training epochs
             N_EPOCHS = args.epochs
             # Enable fp16/bf16 training
@@ -433,10 +438,10 @@ def train_model(model_id, datasets):
             th.cuda.empty_cache()
             print("===========END TO train model=====================")
 
-            model_train_path = 'Tsotsallm'
+            model_train_path = args.output_dir
             log_path = 'Logs.txt'
             log_path_save = '/content/drive/MyDrive/neurips_challenge/logs.txt'
-            model_train_path_save = '/content/drive/MyDrive/neurips_challenge/Tsotsallm'
+            model_train_path_save = f'/content/drive/MyDrive/neurips_challenge/{args.output_dir}'
 
             if os.path.exists(model_train_path_save):
                 shutil.rmtree(model_train_path_save)
@@ -466,7 +471,7 @@ def main1():
     base_model = '/content/drive/MyDrive/neurips_challenge/Tsotsallm'
     adapter_path = '/content/drive/MyDrive/neurips_challenge/adapters'
     from adapter_utils import add_adapters, model_push_to_hub
-    model = add_adapters(adapter_path, base_model)
+    add_adapters(adapter_path, base_model)
 
 
 if __name__ == "__main__":

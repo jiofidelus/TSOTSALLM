@@ -28,11 +28,11 @@ load_dotenv()
 login(token='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')
 
 # model = load_model('meta-llama/Llama-2-7b-hf', True)
-model = load_peft_model('yvelos/Tes')
+model = load_peft_model('yvelos/Tsotsallm-beta')
 
 model.eval()
 
-tokenizer = load_tokenizer('yvelos/Tes')
+tokenizer = load_tokenizer('yvelos/Tsotsallm-beta')
 
 LLAMA2_CONTEXT_LENGTH = 4096
 
