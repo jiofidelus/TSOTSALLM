@@ -1,11 +1,12 @@
-from peft import PeftModel
+from peft import PeftConfig
 from inference.models_utils import load_peft_model, load_tokenizer
 
 
 # Function to load the PeftModel for performance optimization and adding adapters
 def add_adapter(base_model_id, adapter_id):
+    print(adapter_id)
     model = load_peft_model(base_model_id)
-    peft_config = PeftModel.from_pretrained(adapter_id)
+    peft_config = PeftConfig.from_pretrained(adapter_id)
     
     model.add_adapter(base_model_id, peft_config)
     # added_adapter = model.list_added_adapters()
@@ -27,7 +28,7 @@ def add_adapters(path_stored_adapter, base_model_id):
                 shutil.rmtree(item_path)
                 print(item, " has successfully deleted")
             else:
-                model = add_adapters(base_model_id, item_path)
+                model = add_adapter(base_model_id, item_path)
     # added_adapter = model.list_added_adapters()
     return model
 

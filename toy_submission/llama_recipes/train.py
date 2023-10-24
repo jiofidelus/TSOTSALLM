@@ -463,9 +463,10 @@ def main1():
     # datasets = [ai2_arc, common_sense, truth1, truth2, bbq]
     
     # train_model(datasets=datasets, model_id=args.model_name)
-
+    base_model = '/content/drive/MyDrive/neurips_challenge/Tsotsallm'
+    adapter_path = '/content/drive/MyDrive/neurips_challenge/adapters'
     from adapter_utils import add_adapters, model_push_to_hub
-    model = add_adapters(args.output_dir, args.model_name)
+    model = add_adapters(adapter_path, base_model)
 
 
 if __name__ == "__main__":
