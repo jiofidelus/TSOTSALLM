@@ -40,7 +40,7 @@ def loginHub():
 loginHub()
 
 # BB Scenario QA
-lima = TsotsaDataset(split="train[:5%]", type_dataset="bb", name='GAIR/lima')
+lima = TsotsaDataset(split="train[:1%]", type_dataset="bb", name='GAIR/lima')
 lima._load_lima()
 dolly = TsotsaDataset(
     split="train[:20%]", type_dataset="bb", name='databricks/databricks-dolly-15k')
@@ -375,8 +375,8 @@ def training_function(datasets, args):
             tokenizer.save_pretrained(model_merge_save_dir)
 
             # model push
-            model.push_to_hub("yvelos/Test1", use_auth_token=args.hf_token)
-            tokenizer.push_to_hub("yvelos/Test1", use_auth_token=args.hf_token)
+            model.push_to_hub("yvelos/Test1")
+            tokenizer.push_to_hub("yvelos/Test1")
 
 
 def main():
