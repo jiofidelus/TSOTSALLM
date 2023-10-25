@@ -14,6 +14,12 @@ import torch as th
 
 import bitsandbytes as bnb
 from dataset.custom_dataset import TsotsaDataset
+from peft import (
+        get_peft_model,
+        LoraConfig,
+        TaskType,
+        prepare_model_for_kbit_training,
+    )
 
 def loginHub():
     # @title Login on hugging face
@@ -34,37 +40,37 @@ def loginHub():
 loginHub()
 
 # BB Scenario QA
-lima = TsotsaDataset(split="train[:85%]", type_dataset="bb", name='GAIR/lima')
+lima = TsotsaDataset(split="train[:5%]", type_dataset="bb", name='GAIR/lima')
 lima._load_lima()
 dolly = TsotsaDataset(
     split="train[:20%]", type_dataset="bb", name='databricks/databricks-dolly-15k')
-dolly._load_dolly()
+# dolly._load_dolly()
 
 # truthfull QA
 ai2_arc = TsotsaDataset(
     split="train", type_dataset="TruthfullQA", name="ai2_arc")
-ai2_arc._load_ai2_arc()
+# ai2_arc._load_ai2_arc()
 common_sense = TsotsaDataset(
     split="train", type_dataset="TruthfullQA", name="commonsense_qa")
-common_sense._load_commonsense_qa()
+# common_sense._load_commonsense_qa()
 truth1 = TsotsaDataset(
     split="validation", type_dataset="TruthfullQA", name="generation")
-truth1._load_truthfulqa()
+# truth1._load_truthfulqa()
 truth2 = TsotsaDataset(
     split="validation", type_dataset="TruthfullQA", name="multiple_choice")
-truth2._load_truthfulqa1()
+# truth2._load_truthfulqa1()
 
 # Summary Scenario QA
 cnn_dailymail = TsotsaDataset(
     split="train[:1%]", type_dataset='summary', name="cnn_dailymail")
-cnn_dailymail._load_cnn_dailymail()
+# cnn_dailymail._load_cnn_dailymail()
 xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary', name="xsum")
 # xsum._load_xsum()
 
 # BBQ scenario
 bbq = TsotsaDataset(split="", type_dataset='bbq',
                     name="category: {Age, Disability_status, Physical_apparence, Religion, Sexual_orientation}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
-bbq._load_bbq()
+# bbq._load_bbq()
 
 
 def parse_arge():
@@ -146,12 +152,6 @@ def find_all_linear_names(model):
 
 
 def create_peft_model(model, gradient_checkpointing=True, bf16=True):
-    from peft import (
-        get_peft_model,
-        LoraConfig,
-        TaskType,
-        prepare_model_for_kbit_training,
-    )
     from peft.tuners.lora import LoraLayer
 
     # prepare int-4 model for training
@@ -195,7 +195,7 @@ def create_peft_model(model, gradient_checkpointing=True, bf16=True):
 def training_function(datasets, args):
     
     i = 0
-    with open("Logs.txt", "r") as f:
+    with open("Logs.txt", "w+") as f:
         
         for dataset in datasets:     
             if dataset.get_type() == "bb":
@@ -249,7 +249,7 @@ def training_function(datasets, args):
             # Save checkpoint every X updates steps
             save_steps = 0
             # Log every X updates steps
-            logging_steps = 25
+            logging_steps = 20
             
             """
             SFTTrainer parameters
@@ -269,15 +269,17 @@ def training_function(datasets, args):
             )
 
             model = AutoModelForCausalLM.from_pretrained(
-                args.model_id,
+                model_id,
                 use_cache=False
                 if args.gradient_checkpointing
                 else True,  # this is needed for gradient checkpointing
                 device_map="auto",
                 quantization_config=bnb_config,
             )
-            tokenizer = AutoTokenizer.from_pretrained(args.model_id)
-
+            tokenizer = AutoTokenizer.from_pretrained(model_id)
+            tokenizer.pad_token = tokenizer.eos_token
+            tokenizer.padding_side = "right"
+            tokenizer.name_or_path
             # create peft config
             model = create_peft_model(
                 model, gradient_checkpointing=args.gradient_checkpointing, bf16=args.bf16
@@ -309,12 +311,25 @@ def training_function(datasets, args):
                 fp16=fp16,
                 
             )
+            
+            # get lora target modules
+            modules = find_all_linear_names(model)
+            print(f"Found {len(modules)} modules to quantize: {modules}")
+            
+            peft_config = LoraConfig(
+                r=64,
+                lora_alpha=16,
+                target_modules=modules,
+                lora_dropout=0.1,
+                bias="none",
+                task_type=TaskType.CAUSAL_LM,
+            )
 
             # Create Trainer instance
             trainer = SFTTrainer(
                 model=model,
                 train_dataset=train_data,
-                # peft_config=peft_config,
+                peft_config=peft_config,
                 max_seq_length=max_seq_length,
                 tokenizer=tokenizer,
                 packing=True,
@@ -341,14 +356,14 @@ def training_function(datasets, args):
                 model = AutoPeftModelForCausalLM.from_pretrained(
                     args.output_dir,
                     low_cpu_mem_usage=True,
-                    th_dtype=th.float16,
+                    torch_dtype=th.float16,
                     is_trainable=True,
                     device_map="auto"
                 )
                 # Merge LoRA and base model and save
                 model = model.merge_and_unload()
                 model.save_pretrained(
-                    model_merge_save_dir, safe_serialization=True, max_shard_size="2GB"
+                    model_merge_save_dir
                 )
 
             else:
@@ -360,8 +375,8 @@ def training_function(datasets, args):
             tokenizer.save_pretrained(model_merge_save_dir)
 
             # model push
-            model.push_to_hub("yvelos/Tsotsallm-beta", use_auth_token=args.hf_token)
-            tokenizer.push_to_hub("yvelos/Tsotsallm-beta", use_auth_token=args.hf_token)
+            model.push_to_hub("yvelos/Test1", use_auth_token=args.hf_token)
+            tokenizer.push_to_hub("yvelos/Test1", use_auth_token=args.hf_token)
 
 
 def main():
@@ -370,7 +385,7 @@ def main():
     """)
     
     # datasets = [lima, dolly, truth1, truth2,common_sense, ai2_arc, bbq, xsum, cnn_dailymail]
-    datasets = [ai2_arc, common_sense, truth1, truth2, bbq]
+    datasets = [lima]
     args = parse_arge()
     training_function(datasets, args)
 
