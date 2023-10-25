@@ -32,7 +32,7 @@ model = load_peft_model('yvelos/Tsotsallm-beta')
 
 model.eval()
 
-tokenizer = load_tokenizer('yvelos/Tsotsallm-beta')
+tokenizer = load_tokenizer('yvelos/Tes1')
 
 LLAMA2_CONTEXT_LENGTH = 4096
 

@@ -55,7 +55,7 @@ common_sense = TsotsaDataset(
 # common_sense._load_commonsense_qa()
 truth1 = TsotsaDataset(
     split="validation", type_dataset="TruthfullQA", name="generation")
-# truth1._load_truthfulqa()
+truth1._load_truthfulqa()
 truth2 = TsotsaDataset(
     split="validation", type_dataset="TruthfullQA", name="multiple_choice")
 # truth2._load_truthfulqa1()
@@ -163,7 +163,6 @@ def create_peft_model(model, gradient_checkpointing=True, bf16=True):
 
     # get lora target modules
     modules = find_all_linear_names(model)
-    print(f"Found {len(modules)} modules to quantize: {modules}")
 
     peft_config = LoraConfig(
         r=64,
@@ -218,7 +217,7 @@ def training_function(datasets, args):
                 model_id = args.model_name
                 i += 1
             else:
-                model_id = args.output_dir
+                model_id = 'merged/model'
                 i += 1
                    
             # set seed
@@ -284,6 +283,12 @@ def training_function(datasets, args):
             model = create_peft_model(
                 model, gradient_checkpointing=args.gradient_checkpointing, bf16=args.bf16
             )
+            
+            f.write(f'============ Base Model=========================\n')
+            f.write(f'Name of the base Model: {model._get_name()}\n')
+            f.write(f'Number of trainable parameter: {model.print_trainable_parameters()}\n')
+            f.write(f'Dataset Name: {dataset.get_name()}\n')
+            f.write(f'Dataset Lenght: {dataset.__len__()}\n')
 
             # Define training args
             training_args = TrainingArguments(
@@ -315,7 +320,7 @@ def training_function(datasets, args):
             # get lora target modules
             modules = find_all_linear_names(model)
             print(f"Found {len(modules)} modules to quantize: {modules}")
-            
+            f.write(f"Found {len(modules)} modules to quantize: {modules}")
             peft_config = LoraConfig(
                 r=64,
                 lora_alpha=16,
@@ -338,9 +343,11 @@ def training_function(datasets, args):
             )
 
             # Start training
-            trainer.train()
+            f.write(f'Training Step: \n {trainer.train()}\n')
+            
 
             model_merge_save_dir = "merged/model/"
+            f.write(f'================ LoRA Model====================\n')
             if args.merge_weights:
                 # merge adapter weights with base model and save
                 # save int 4 model
@@ -360,21 +367,32 @@ def training_function(datasets, args):
                     is_trainable=True,
                     device_map="auto"
                 )
+                f.write(f'LoRA model save dir: {args.output_dir}\n')
+                f.write(f'Model Number of parameters: {model.num_parameters()}\n\n')
                 # Merge LoRA and base model and save
+                print('Merge LoRA and base model and save')
+                f.write('============== Merge LoRA and base model and save ==========')
                 model = model.merge_and_unload()
                 model.save_pretrained(
                     model_merge_save_dir
                 )
+                f.write(f'Merged model save dir: {model_merge_save_dir}\n')
 
             else:
                 trainer.model.save_pretrained(
                     model_merge_save_dir, safe_serialization=True
                 )
+                f.write(f'LoRA model save dir: {args.output_dir}\n')
+                del model
+                del trainer
+                th.cuda.empty_cache()
 
             # save tokenizer for easy inference
+            print("save tokenizer for easy inference")
             tokenizer.save_pretrained(model_merge_save_dir)
 
             # model push
+            print('push model')
             model.push_to_hub("yvelos/Test1")
             tokenizer.push_to_hub("yvelos/Test1")
 
@@ -385,7 +403,7 @@ def main():
     """)
     
     # datasets = [lima, dolly, truth1, truth2,common_sense, ai2_arc, bbq, xsum, cnn_dailymail]
-    datasets = [lima]
+    datasets = [lima,truth1]
     args = parse_arge()
     training_function(datasets, args)
 
