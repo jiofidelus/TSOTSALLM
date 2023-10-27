@@ -344,8 +344,8 @@ def train_model(args, datasets):
                 f"=============== END TO train model========================\n\n\n")
             th.cuda.empty_cache()
             print("===========END TO train model=====================")
-
-    return model
+            del model
+            th.cuda.empty_cache()
 
 
 def main1():
@@ -398,12 +398,20 @@ def main1():
     args = argsparser()
     
     print("===========Start training our model By loading the dataset.========")
-    model = train_model(datasets=datasets, args=args)
+    train_model(datasets=datasets, args=args)
     print("===========End Total training .========")
     
     """ 
-        Push the model Fine tune on the Hub for making the inference later
+        Push the model Fine tuned on the Hub for making the inference later
     """
+    model = AutoPeftModelForCausalLM.from_pretrained(
+      args.output_dir,
+      low_cpu_mem_usage=True,
+      return_dict=True,
+      torch_dtype=th.float16,
+      device_map={'': 0},
+      is_trainable=True,
+    )
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     model.push_to_hub(args.hf_rep)
     tokenizer.push_to_hub(args.hf_rep)

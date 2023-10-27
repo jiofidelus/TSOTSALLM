@@ -1,0 +1,19 @@
+FROM ghcr.io/pytorch/pytorch-nightly:b3874ab-cu11.8.0
+
+RUN apt-get update  && apt-get install -y git python3-virtualenv wget
+
+WORKDIR /workspace
+
+COPY requirements/requirements.txt requirements/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r requirements/requirements.txt
+
+
+
+ENV HUGGINGFACE_TOKEN="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"
+ENV HUGGINGFACE_REPO="yvelos/Tsotsallm-evaluation"
+
+COPY ./train.py train.py
+COPY dataset/custom_dataset.py dataset/custom_dataset.py
+COPY ./api.py api.py
+
+CMD [ "python", "train.py", "--model-name", "meta-llama/Llama-2-7b-hf"  "--hf_rep", "yvelos/Tsotsallm-evaluation", "--output_dir", "temp/model/Tsotsallm"]

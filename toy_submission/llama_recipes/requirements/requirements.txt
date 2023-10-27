@@ -6,3 +6,4 @@ bitsandbytes
 trl
 safetensors>=0.3.1
 jsonlines
+python_dotenv

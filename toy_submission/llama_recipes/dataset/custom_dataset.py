@@ -4,8 +4,8 @@ import os
 import requests
 import jsonlines
 
-# path = f'{os.getcwd()}/data'
-path = f'{os.getcwd()}/toy_submission/llama_recipes/data'
+path = f'{os.getcwd()}/data'
+# path = f'{os.getcwd()}/toy_submission/llama_recipes/data'
 
 
 def download_file(path_destination):
@@ -123,7 +123,7 @@ class TsotsaDataset:
     """
 
     def _load_xsum(self):
-        self.dataset_id = "xsum"
+        self.dataset_id = "EdinburghNLP/xsum"
         self.dataset = load_dataset(self.dataset_id, split=self.split)
         return self.dataset
 
@@ -346,5 +346,5 @@ class TsotsaDataset:
         {correct_answer}
 
         """
-        print(string)
+        # print(string)
         return string
