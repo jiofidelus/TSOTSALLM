@@ -93,14 +93,14 @@ like BB(Big Bench), TruthfulQA, BBQ...
 
 for each scenario we used different dataset that public available
 
-<strong> BBQ Scenario </strong>
--
+### BBQ Scenario 
+
   the dataset that we are used to this scenario are available on:
 
   [https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/](https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/)
 
-TruthfulQA Scenario
--  
+### TruthfulQA Scenario
+  
   for this scenario we used the different dataset
   - [ai2_arc](https://huggingface.co/datasets/ai2_arc) store on huggingFace
   
@@ -108,15 +108,14 @@ TruthfulQA Scenario
   
   - [truthful_qa](https://huggingface.co/datasets/truthful_qa)
 
-BB Scenario
-  - 
+### BB Scenario
+  
   the dataset that we used for this scenario are store on the huggingFace: lima and dolly databrick
 
   - [lima](https://huggingface.co/datasets/GAIR/lima)
   - [dolly-databricks](https://huggingface.co/datasets/databricks/databricks-dolly-15k)
 
-Summarization Scenario
--
+### Summarization Scenario
 
   - [cnn_dailymail](https://huggingface.co/datasets/cnn_dailymail)
   - [xsum](https://huggingface.co/datasets/EdinburghNLP/xsum)
