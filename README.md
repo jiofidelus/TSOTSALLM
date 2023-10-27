@@ -131,4 +131,4 @@ Summarization Scenario
 | jean petit      |  @jeanpetitt        |  jean.bikim@facsciences-uy1.cm
 | Martins         |  @FOLEFAC           |  martinsderick99@gmail.com
 | Brice
-| Fidel Jiomekong |  @jiofidelus        | jiofidelus@gmail.com
+| Fidel Jiomekong |  @jiofidelus        |  fidel.jiomekong@facsciences-uy1.cm
