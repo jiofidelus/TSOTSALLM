@@ -1,37 +1,3 @@
-import os
-from dotenv import load_dotenv
-from huggingface_hub import login, HfApi
-# from llama_recipes.finetuning import main as finetuning
-
-# def main():
-#     load_dotenv()
-#     login(token=os.environ["HUGGINGFACE_TOKEN"])
-
-#     kwargs = {
-#         "model_name": "meta-llama/Llama-2-7b-hf",
-#         "use_peft": True,
-#         "peft_method": "lora",
-#         "quantization": True,
-#         "batch_size_training": 2,
-#         "dataset": "custom_dataset",
-#         "custom_dataset.file": "./custom_dataset.py",
-#         "output_dir": "./output_dir ",
-#     }
-
-#     finetuning(**kwargs)
-
-#     api = HfApi()
-
-#     api.upload_folder(
-#         folder_path='./output_dir/',
-#         repo_id=os.environ["HUGGINGFACE_REPO"],
-#         repo_type='model',
-#     )
-
-# if __name__ == "__main__":
-#     main()
-
-
 # -*- coding: utf-8 -*-
 """Neurips_efficiency_LLM_challenge.ipynb
 
@@ -56,13 +22,12 @@ from trl import SFTTrainer
 import argparse
 import time
 from dataset.custom_dataset import TsotsaDataset
-import shutil
 
 
 def argsparser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-name", type=str,
-                        required=True, help="Name of the base model")
+                        required=True, help="Name of the base model", default='meta-llama/Llama-2-7b-hf')
     parser.add_argument("--dataset", type=str,
                         default="GAIR/lima", help="dataset used to train model")
     parser.add_argument("--split", type=str, default="train[:10%]")
@@ -100,89 +65,42 @@ def argsparser():
     args = parser.parse_args()
     return args
 
-
-args = argsparser()
-
-
 def loginHub():
     # @title Login on hugging face
-    from huggingface_hub import login, notebook_login
+    from huggingface_hub import login
     from dotenv import load_dotenv
-    # notebook_login()
-
-    # @title Load environments variables
-    # from dotenv import load_dotenv
     import os
-
+ 
+    # @title Load environments variables
     # # Load the enviroment variables
     load_dotenv()
     # Login to the Hugging Face Hub
-    login(token="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")
+    login(token=os.environ["HUGGINGFACE_TOKEN"])
     return login
 
 
 loginHub()
 
-# BB Scenario QA
-lima = TsotsaDataset(split="train[:85%]", type_dataset="bb", name='GAIR/lima')
-lima._load_lima()
-dolly = TsotsaDataset(
-    split="train[:20%]", type_dataset="bb", name='databricks/databricks-dolly-15k')
-dolly._load_dolly()
 
-# truthfull QA
-ai2_arc = TsotsaDataset(
-    split="train", type_dataset="TruthfullQA", name="ai2_arc")
-ai2_arc._load_ai2_arc()
-common_sense = TsotsaDataset(
-    split="train", type_dataset="TruthfullQA", name="commonsense_qa")
-common_sense._load_commonsense_qa()
-truth1 = TsotsaDataset(
-    split="validation", type_dataset="TruthfullQA", name="generation")
-truth1._load_truthfulqa()
-truth2 = TsotsaDataset(
-    split="validation", type_dataset="TruthfullQA", name="multiple_choice")
-truth2._load_truthfulqa1()
-
-# Summary Scenario QA
-cnn_dailymail = TsotsaDataset(
-    split="train[:1%]", type_dataset='summary', name="cnn_dailymail")
-cnn_dailymail._load_cnn_dailymail()
-xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary', name="xsum")
-# xsum._load_xsum()
-
-# BBQ scenario
-bbq = TsotsaDataset(split="", type_dataset='bbq',
-                    name="category: {Age, Disability_status, Physical_apparence, Religion, Sexual_orientation}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
-bbq._load_bbq()
-
-
-def train_model(model_id, datasets):
+def train_model(args, datasets):
     i = 0
-    
-    hf_model_rep = args.hf_rep
     device_map = {'': 0}
     # run list of all dataset
     with open(f'Logs.txt', 'w') as f:
         for dataset in datasets:
+            f.write(f'===========Scenario: {dataset.get_type()}')
             if dataset.get_type() == "bb":
                 formating_function = dataset.prepare_bb_scenario
-                args.output_dir = f'{dataset.get_name()}_bb'
             elif dataset.get_type() == "TruthfullQA":
                 formating_function = dataset.prepare_truthfulqa_scenario
-                args.output_dir = f'{dataset.get_name()}_MCQ'
-                args.epochs = 3
-                if dataset.get_name() == 'commonsense_qa':
-                    args.epochs = 2
             elif dataset.get_type() == "summary":
                 formating_function = dataset.prepare_summerization_scenario
                 args.output_dir = f'{dataset.get_name()}_summarization'
                 args.epochs = 1
             elif dataset.get_type() == 'bbq':
                 formating_function = dataset.prepare_bbq_scenario
-                args.output_dir = f'{dataset.get_name()}_bbq'
             if i == 0:
-                model_id = model_id
+                model_id = args.model_name
                 i += 1
             else:
                 model_id = args.output_dir
@@ -245,7 +163,7 @@ def train_model(model_id, datasets):
             # Save checkpoint every X updates steps
             save_steps = 0
             # Log every X updates steps
-            logging_steps = 25
+            logging_steps = 20
             # Disable tqdm
             disable_tqdm = True
 
@@ -331,7 +249,7 @@ def train_model(model_id, datasets):
                 optim=optim,
                 save_steps=save_steps,
                 logging_steps=logging_steps,
-                save_strategy="epoch",
+                save_strategy="steps",
                 learning_rate=learning_rate,
                 weight_decay=weight_decay,
                 fp16=fp16,
@@ -343,7 +261,8 @@ def train_model(model_id, datasets):
                 lr_scheduler_type=lr_scheduler_type,
                 # disable_tqdm=disable_tqdm,
                 report_to="tensorboard",
-                seed=args.seed
+                seed=args.seed,
+                logging_dir=f"{args.output_dir}/logs"
             )
 
             """Before we can start our training, we need to define the hypersparemeters In a TrainingArgument object we want to use"""
@@ -399,7 +318,7 @@ def train_model(model_id, datasets):
             gc.collect()
 
             # @title Reload the trained and saved model and merge it then we can save the whole model
-            model_fine = AutoPeftModelForCausalLM.from_pretrained(
+            model = AutoPeftModelForCausalLM.from_pretrained(
                 args.output_dir,
                 low_cpu_mem_usage=True,
                 return_dict=True,
@@ -407,71 +326,91 @@ def train_model(model_id, datasets):
                 device_map={'': 0},
                 is_trainable=True
             )
-            tokenizer = AutoTokenizer.from_pretrained(args.output_dir)
-            model_fine.generation_config.temperature = 0.8
-            model_fine.generation_config.do_sample = True
-            model_fine.generation_config.num_beams = 4
+            tokenizer = AutoTokenizer.from_pretrained(args.output_dir,  safe_serialization=True)
+            model.generation_config.temperature = 0.8
+            model.generation_config.do_sample = True
+            model.generation_config.num_beams = 4
             # # config json
-            model_fine.config.pretraining_tp = 1
-            model_fine.config.temperature = 0.8
-            model_fine.config.do_sample = True
-            # save the merge model
-            # model_fine.push_to_hub("yvelos/Tes")
-            # tokenizer.push_to_hub("yvelos/Tes")
+            model.config.pretraining_tp = 1
+            model.config.temperature = 0.1
+            model.config.do_sample = True
+
             f.write(
-                "=============== Model Fine tuning infos========================\n")
-            f.write(f"Model architecture: {args.output_dir}\n")
-            f.write(f"Model architecture: {model_fine}\n")
-            f.write(f"Model parameters: {model_fine.num_parameters()}\n")
-            f.write(f"Model config:\n {model_fine.config}\n")
-            # f.write(f"=============== Model merged infos========================\n")
-            # f.write(f"Model name: {merged_model}\n")
-            # f.write(f"Model parameters: {merged_model.num_parameters()}\n")
-            # f.write(f"Model config:\n {merged_model.config}\n")
+                "=============== Model LoRA infos========================\n")
+            f.write(f"Model name: {args.output_dir}\n")
+            f.write(f"Model parameters: {model.num_parameters()}\n")
+            f.write(f"Model config:\n {model.config}\n")
             f.write(
                 f"=============== END TO train model========================\n\n\n")
-
-            # @title Push Merged Model to the Hub
-            # # merged_model.push_to_hub(args.hf_rep)
-            # tokenizer.push_to_hub(args.hf_rep)
-            del model_fine
             th.cuda.empty_cache()
             print("===========END TO train model=====================")
 
-            model_train_path = args.output_dir
-            log_path = 'Logs.txt'
-            log_path_save = '/content/drive/MyDrive/neurips_challenge/logs.txt'
-            model_train_path_save = f'/content/drive/MyDrive/neurips_challenge/{args.output_dir}'
-
-            if os.path.exists(model_train_path_save):
-                shutil.rmtree(model_train_path_save)
-                shutil.copytree(model_train_path, model_train_path_save)
-            else:
-                shutil.copytree(model_train_path, model_train_path_save)
-
-            if os.path.exists(log_path_save):
-                os.remove(log_path_save)
-                shutil.copy2(log_path, log_path_save)
-            else:
-                shutil.copy2(log_path, log_path_save)
-
-            # copy  train model to drive
-    return tokenizer
+    return model
 
 
 def main1():
-    print("""
-        Start training our model By loading the dataset.
-    """)
+    """ 
+        Create instance of Class Tsotsa Dataset which is our Custom dataset 
+    """
+    # BB Scenario QA
+    lima = TsotsaDataset(split="train[:85%]", type_dataset="bb", name='GAIR/lima')
+    lima._load_lima()
+    dolly = TsotsaDataset(
+        split="train[:50%]", type_dataset="bb", name='databricks/databricks-dolly-15k')
+    dolly._load_dolly()
+
+    # truthfull QA
+    ai2_arc = TsotsaDataset(
+        split="train", type_dataset="TruthfullQA", name="ai2_arc")
+    ai2_arc._load_ai2_arc()
+    common_sense = TsotsaDataset(
+        split="train", type_dataset="TruthfullQA", name="commonsense_qa")
+    common_sense._load_commonsense_qa()
+    truth1 = TsotsaDataset(
+        split="validation", type_dataset="TruthfullQA", name="generation")
+    truth1._load_truthfulqa()
+    truth2 = TsotsaDataset(
+        split="validation", type_dataset="TruthfullQA", name="multiple_choice")
+    truth2._load_truthfulqa1()
+
+    # Summary Scenario QA
+    cnn_dailymail = TsotsaDataset(
+        split="train[:1%]", type_dataset='summary', name="cnn_dailymail")
+    cnn_dailymail._load_cnn_dailymail()
+    xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary', name="xsum")
+    xsum._load_xsum()
+
+    # BBQ scenario
+    bbq = TsotsaDataset(split="", type_dataset='bbq',
+                        name="category: {Age, Disability_status, Physical_apparence, Religion, Sexual_orientation}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
+    bbq._load_bbq()
+    bbq1 = TsotsaDataset(split="", type_dataset='bbq',
+                        name="category: {Gender, Nationality, Race_ethnicity}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
+    bbq1._load_bbq1()
+    bbq2 = TsotsaDataset(split="", type_dataset='bbq',
+                        name="category: {Race_X_gender, Race_x_ses, Ses}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
+    bbq2._load_bbq2()
     
-    datasets = [lima, dolly, truth1, truth2,common_sense, ai2_arc, bbq, xsum, cnn_dailymail]
-    # datasets = [ai2_arc, common_sense, truth1, truth2, bbq]
+    # list of dataset
+    datasets = [lima, dolly, truth1, truth2,common_sense, ai2_arc, bbq,bbq1,bbq2, xsum, cnn_dailymail]
     
-    # train_model(datasets=datasets, model_id=args.model_name)
-    base_model = '/content/drive/MyDrive/neurips_challenge/Tsotsallm'
-    adapter_path = '/content/drive/MyDrive/neurips_challenge/adapters'
-    from adapter_utils import add_adapters, model_push_to_hub
-    add_adapters(adapter_path, base_model)
+    # call args parameters
+    args = argsparser()
+    
+    print("===========Start training our model By loading the dataset.========")
+    model = train_model(datasets=datasets, args=args)
+    print("===========End Total training .========")
+    
+    """ 
+        Push the model Fine tune on the Hub for making the inference later
+    """
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
+    model.push_to_hub(args.hf_rep)
+    tokenizer.push_to_hub(args.hf_rep)
+    # base_model = '/content/drive/MyDrive/neurips_challenge/Tsotsallm'
+    # adapter_path = '/content/drive/MyDrive/neurips_challenge/adapters'
+    # from adapter_utils import add_adapters, model_push_to_hub
+    # add_adapters(adapter_path, base_model)
 
 
 if __name__ == "__main__":

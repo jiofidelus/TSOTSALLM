@@ -25,14 +25,14 @@ logger = logging.getLogger(__name__)
 # Configure the logging module
 logging.basicConfig(level=logging.INFO)
 load_dotenv()
-login(token='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')
+login(token=os.environ["HUGGINGFACE_TOKEN"])
 
 # model = load_model('meta-llama/Llama-2-7b-hf', True)
-model = load_peft_model('yvelos/Tsotsallm-beta')
+model = load_peft_model(token=os.environ['HUGGINGFACE_REPO'])
 
 model.eval()
 
-tokenizer = load_tokenizer('yvelos/Tes1')
+tokenizer = load_tokenizer('meta-llama/Llama-2-7b-hf')
 
 LLAMA2_CONTEXT_LENGTH = 4096
 
@@ -41,8 +41,8 @@ LLAMA2_CONTEXT_LENGTH = 4096
 async def process_request(input_data: ProcessRequest) -> ProcessResponse:
     if input_data.seed is not None:
         torch.manual_seed(input_data.seed)
-
-    encoded = tokenizer(input_data.prompt, return_tensors="pt")
+    prompt = 'Welcome in your virtual assistant!!!!!!!\n' + input_data.prompt
+    encoded = tokenizer(prompt, return_tensors="pt")
 
     prompt_length = encoded["input_ids"][0].size(0)
     max_returned_tokens = prompt_length + input_data.max_new_tokens
