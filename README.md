@@ -125,3 +125,10 @@ Summarization Scenario
 <!-- About Author  -->
 
 ## About Author
+
+| Name            | Github Account      |     email     |
+| ---------       | ---------           |    -------
+| jean petit      |  @jeanpetitt        |  jean.bikim@facsciences-uy1.cm
+| Martins         |  @FOLEFAC           |  martinsderick99@gmail.com
+| Brice
+| Fidel Jiomekong |  @jiofidelus        | jiofidelus@gmail.com
