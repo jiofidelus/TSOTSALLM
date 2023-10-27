@@ -30,7 +30,7 @@ After installed python3, open your terminal to install dependance of the project
   
 ```bash
 git clone https://github.com/jiofidelus//TSOTSALLM.git
-cd TSOTSALLM/toy_submission/llama_recipes
+cd TSOTSALLM/Tsotsallm/llama_recipes
 ```
 
 * Secongly, create virtual environment
