@@ -129,5 +129,5 @@ for each scenario we used different dataset that public available
 | ---------       | ---------           |    -------
 | jean petit      |  @jeanpetitt        |  jean.bikim@facsciences-uy1.cm
 | Martins         |  @FOLEFAC           |  martinsderick99@gmail.com
-| Brice
+| Brice           | Fokobrice3          |  fokobrice3@gmail.com
 | Fidel Jiomekong |  @jiofidelus        |  fidel.jiomekong@facsciences-uy1.cm
