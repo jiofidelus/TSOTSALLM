@@ -76,7 +76,7 @@ if all is okay, you can run project via docker or simple execution of the train 
 python train.py --model-name meta-llama/Llama-2-7b-hf --hf_rep yvelos/Tsotsallm-evaluation --output_dir /temp/model/Tsotsallm
 ```
 
-NB: You can replace the arguments values by your ovalue. if you choose second method to train datase, you should create and <strong>.env file </strong> in your project and paste theses line in:
+NB: You can replace the arguments values by your own values. if you choose second method to train datase, you should create and <strong>.env file </strong> in your project and paste theses line in:
 
 ```bash
 HUGGINGFACE_TOKEN="YOUR_TOKEN"
