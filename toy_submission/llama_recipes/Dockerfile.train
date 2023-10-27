@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir --upgrade -r requirements/requirements.txt
 
 
 ENV HUGGINGFACE_TOKEN="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"
-ENV HUGGINGFACE_REPO="yvelos/Tsotsallm-evaluation"
+ENV HUGGINGFACE_REPO="yvelos/Tsotsallm-beta"
 
 COPY ./train.py train.py
 COPY dataset/custom_dataset.py dataset/custom_dataset.py

@@ -1,6 +1,6 @@
 __pycache__/
 venv/
-.env
+.en
 toy_submission*.zip
 oasst1.csv
 test.py
