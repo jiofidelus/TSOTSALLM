@@ -1,39 +1,40 @@
-# TSOTSALLM: Large Language Models at large scales
+**<span style=”color: red”>Only this README was modified on Saturday 28.10.2023 with links to appropriate resources (docker) in the GitHub repository.</span>**
 
-TSOTSALLM is an LLM obtained after fine tuned llama2 with 7B parameters. the public repository of this LLM is here [meta-llama/Llama-2-7b-hf](https://huggingface.co/meta-llama/Llama-2-7b)
-you can see more summary about TSOTSALLM on [Read summary](./TSOTSALLM.md)
+# TSOTSALLM: Large Language Models at Small Scales
 
-<!-- setup development enviroment -->
-## Development Enviroment
+TSOTSALLM is a LLM obtained after fine tuned llama2 with 7B parameters. The public repository of this LLM is: [meta-llama/Llama-2-7b-hf](https://huggingface.co/meta-llama/Llama-2-7b-hf)
+
+[Click to have more information on TSOTSALLM](./TSOTSALLM.md)
+
+<!-- Setup the development environment -->
+## Development Environment
 
 ### Operating System
 
-This pproject can run om:
+This project can run on the following operating systems:
 
-* Linux distribution but we used Ubuntu 20.04
+* Linux distribution. The version we used for testing is Ubuntu 20.04
 * Mac Os
 * Windows
 
 ### Code Editor
 
 * Visual Studio Code
-* google Colab
+* Google Colab
 
-### Install Dependancies
+### Dependencies
+To reproduce this project locally, Python 3 should be installed. If it is not the case, follow the following link for installation instructions: [Download python](https://www.python.org/downloads/)
 
-To reproduce this project locally make sure your have Python3 install on your device.
-if you don't have python install on your device you can follow this link [Download python](https://www.python.org/downloads/)
-
-After installed python3, open your terminal to install dependance of the project
+Once Python 3 is installed, the following points give the steps to install all dependencies:
 
 * Firstly, clone the project:
-  
+ 
 ```bash
 git clone https://github.com/jiofidelus//TSOTSALLM.git
 cd TSOTSALLM/Tsotsallm/llama_recipes
 ```
 
-* Secongly, create virtual environment
+* Secondly, create virtual environment
 
 ```bash
 pip install virtualenv
@@ -41,76 +42,71 @@ python -m venv venv
 ```
 
 * Activate your environment
-  
+ 
 ```bash
 source venv/bin/activate
 ```
 
-* Install project dependencies
-  
+* Install the project dependencies
+ 
 ```bash
 pip install -r requirements.txt
 pip install -r fast_api_requirements.txt
 ```
 
-## Run Project
+## Run the project
 
-To Run the project make sure your A100 GPU (40GB) is availble.
-if all is okay, you can run project via docker or simple execution of the train file.
+To Run the project make sure your A100 GPU (40GB) is available.
 
-* With Docker <br/>
-  the project have two Docker file: [docker train](/toy_submission/llama_recipes/Dockerfile) and [docker inference](/toy_submission/llama_recipes/Dockerfile.inference)
+When everything is OK, you can run the project via docker or by executing the train file.
 
-  Train dataset navigate inside of the [docker train file](/toy_submission/llama_recipes/Dockerfile)
-  inside you can replace the token and repository by your own repository and token
+* Using Docker <br/>
+The project has two Docker file: [docker train](/Tsotsallm/llama_recipes/Dockerfile.train) and [docker inference](/Tsotsallm/llama_recipes/Dockerfile.inference)
 
-  To make inference navigate inside of the Train dataset navigate inside of the [docker inference file](/toy_submission/llama_recipes/Dockerfile)
-  inside you can replace the token and repository by your own repository and token
+To train, navigate in the [docker train file](/Tsotsallm/llama_recipes/Dockerfile.train) and replace the token and repository by your own repository and token.
 
-  Go on [Docker Readme](/toy_submission/llama_recipes/README.md) to see how you can do to train model and make inference using DockerFile
+To make the inference navigate in [docker inference file](/Tsotsallm/llama_recipes/Dockerfile.inference) and replace the token and repository by your own repository and token.
 
+The [Docker Readme](/Tsotsallm/llama_recipes/README.md) contains the instructions to launch the [docker train file](/Tsotsallm/llama_recipes/Dockerfile.train) and [docker inference file](/Tsotsallm/llama_recipes/Dockerfile.inference).
 
-* Train dataset with commande line
-  
-```bash
-python train.py --model-name meta-llama/Llama-2-7b-hf --hf_rep yvelos/Tsotsallm-evaluation --output_dir /temp/model/Tsotsallm
-```
-
-NB: You can replace the arguments values by your own values. if you choose second method to train datase, you should create and <strong>.env file </strong> in your project and paste theses line in:
+* Second method: clone the repository and train the model locally. To this end, replace the arguments values by your own values. Create and <strong>.env file </strong> in your project and paste the following text:
 
 ```bash
 HUGGINGFACE_TOKEN="YOUR_TOKEN"
 HUGGINGFACE_REPO="YOUR_USERNAME/YOUR_REPO"
 ```
+Replace the value of these environments variable by your own. 
 
-Replace the value of these environments variable by your own. or can navigagete inside of the Docker file and then copy and paste thes elements. 
-If you choose first method(Dockerfile), you can change value of this environment variable by your own. 
-
+Execute the following commands to train the model:
+ 
+```bash
+python train.py --model-name meta-llama/Llama-2-7b-hf --hf_rep yvelos/Tsotsallm-beta --output_dir /temp/model/Tsotsallm
+```
 ## About Dataset
 
 The fine tuning of the TSOTSALLM is based on  different scenario
 like BB(Big Bench), TruthfulQA, BBQ...
 
-for each scenario we used different dataset that public available
+For each scenario we used different dataset that are publicly available.
 
-### BBQ Scenario 
+### BBQ Scenario
 
-  the dataset that we are used to this scenario are available on:
+The dataset that we are used to this scenario are available on:
 
-  [https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/](https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/)
+[https://github.com/nyu-mll/BBQ/tree/main/data](https://github.com/nyu-mll/BBQ/tree/main/data)
 
 ### TruthfulQA Scenario
-  
-  for this scenario we used the different dataset
+ 
+For this scenario we used the different dataset
   - [ai2_arc](https://huggingface.co/datasets/ai2_arc) store on huggingFace
-  
+ 
   - [commonsense_qa](https://huggingface.co/datasets/commonsense_qa) store on huggingFace
-  
+ 
   - [truthful_qa](https://huggingface.co/datasets/truthful_qa)
 
 ### BB Scenario
-  
-  the dataset that we used for this scenario are store on the huggingFace: lima and dolly databrick
+ 
+The dataset that we used for this scenario are store on the huggingFace: lima and dolly databrick
 
   - [lima](https://huggingface.co/datasets/GAIR/lima)
   - [dolly-databricks](https://huggingface.co/datasets/databricks/databricks-dolly-15k)
@@ -125,9 +121,9 @@ for each scenario we used different dataset that public available
 
 ## About Author
 
-| Name            | Github Account      |     email     |
-| ---------       | ---------           |    -------
-| jean petit      |  @jeanpetitt        |  jean.bikim@facsciences-uy1.cm
-| Martins         |  @FOLEFAC           |  martinsderick99@gmail.com
-| Brice           | Fokobrice3          |  fokobrice3@gmail.com
-| Fidel Jiomekong |  @jiofidelus        |  fidel.jiomekong@facsciences-uy1.cm
+| Name        	| Github Account  	| 	email 	|
+| ---------   	| ---------       	|	-------
+| jean petit  	|  @jeanpetitt    	|  jean.bikim@facsciences-uy1.cm
+| Martins     	|  @FOLEFAC       	|  martinsderick99@gmail.com
+| Brice       	| Fokobrice3      	|  fokobrice3@gmail.com
+| Fidel Jiomekong |  @jiofidelus    	|  fidel.jiomekong@facsciences-uy1.cm
