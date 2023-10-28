@@ -1,4 +1,4 @@
-**<span style=”color: red”>Only this README was modified on Saturday 28.10.2023 with links to appropriate resources (docker) in the GitHub repository.</span>**
+**Only this README was modified on Saturday 28.10.2023 with links to appropriate resources (docker) in the GitHub repository.**
 
 # TSOTSALLM: Large Language Models at Small Scales
 
