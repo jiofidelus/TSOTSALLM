@@ -28,7 +28,7 @@ load_dotenv()
 login(token=os.environ["HUGGINGFACE_TOKEN"])
 
 # model = load_model('meta-llama/Llama-2-7b-hf', True)
-model = load_peft_model(token=os.environ['HUGGINGFACE_REPO'])
+model = load_peft_model(model_id=os.environ['HUGGINGFACE_REPO'])
 
 model.eval()
 
