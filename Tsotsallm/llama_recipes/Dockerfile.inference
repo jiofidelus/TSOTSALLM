@@ -11,7 +11,8 @@ RUN pip install --no-cache-dir --upgrade -r requirements/fast_api_requirements.t
 RUN pip install --no-cache-dir --upgrade -r requirements/requirements.txt
 
 ENV HUGGINGFACE_TOKEN="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"
-ENV HUGGINGFACE_REPO="yvelos/Tes"
+# ENV HUGGINGFACE_REPO="yvelos/Tes"
+ENV HUGGINGFACE_REPO="yvelos/Tsotsallm-beta"
 
 # Copy over single file server
 COPY inference/models_utils.py inference/models_utils.py
