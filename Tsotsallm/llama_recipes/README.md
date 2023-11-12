@@ -21,17 +21,17 @@ python train.py --model-name meta-llama/Llama-2-7b-hf --hf_rep yvelos/Tsotsallm-
 
 
 ```bash
-docker build -f ./Dockerfile.train -t Tsotsallm_train .
+docker build -f ./Dockerfile.train -t tsotsallm_train .
 
-docker run --gpus "device=0" --rm -ti Tsotsallm_train
+docker run --gpus "device=0" --rm -ti tsotsallm_train
 ```
 
 The inference Docker is created and started with:
 
 ```bash
-docker build -f ./Dockerfile.inference -t Tsotsallm_inference .
+docker build -f ./Dockerfile.inference -t tsotsallm_inf .
 
-docker run --gpus "device=0" -p 8080:80 --rm -ti Tsotsallm_inference
+docker run --gpus "device=0" -p 8080:80 --rm -ti tsotsallm_inf
 ```
 
 To test the inference docker we can run this query:
