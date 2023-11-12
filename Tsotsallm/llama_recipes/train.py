@@ -65,12 +65,13 @@ def argsparser():
     args = parser.parse_args()
     return args
 
+
 def loginHub():
     # @title Login on hugging face
     from huggingface_hub import login
     from dotenv import load_dotenv
     import os
- 
+
     # @title Load environments variables
     # # Load the enviroment variables
     load_dotenv()
@@ -326,7 +327,8 @@ def train_model(args, datasets):
                 device_map={'': 0},
                 is_trainable=True
             )
-            tokenizer = AutoTokenizer.from_pretrained(args.output_dir,  safe_serialization=True)
+            tokenizer = AutoTokenizer.from_pretrained(
+                args.output_dir,  safe_serialization=True)
             model.generation_config.temperature = 0.8
             model.generation_config.do_sample = True
             model.generation_config.num_beams = 4
@@ -353,64 +355,72 @@ def main1():
         Create instance of Class Tsotsa Dataset which is our Custom dataset 
     """
     # BB Scenario QA
-    lima = TsotsaDataset(split="train[:85%]", type_dataset="bb", name='GAIR/lima')
-    lima._load_lima()
+    lima = TsotsaDataset(split="train[:85%]",
+                         type_dataset="bb", name='GAIR/lima')
+    # lima._load_lima()
     dolly = TsotsaDataset(
         split="train[:50%]", type_dataset="bb", name='databricks/databricks-dolly-15k')
-    dolly._load_dolly()
+    # dolly._load_dolly()
 
     # truthfull QA
     ai2_arc = TsotsaDataset(
         split="train", type_dataset="TruthfullQA", name="ai2_arc")
-    ai2_arc._load_ai2_arc()
+    # ai2_arc._load_ai2_arc()
     common_sense = TsotsaDataset(
         split="train", type_dataset="TruthfullQA", name="commonsense_qa")
-    common_sense._load_commonsense_qa()
+    # common_sense._load_commonsense_qa()
     truth1 = TsotsaDataset(
         split="validation", type_dataset="TruthfullQA", name="generation")
-    truth1._load_truthfulqa()
+    # truth1._load_truthfulqa()
     truth2 = TsotsaDataset(
         split="validation", type_dataset="TruthfullQA", name="multiple_choice")
-    truth2._load_truthfulqa1()
+    # truth2._load_truthfulqa1()
 
     # Summary Scenario QA
     cnn_dailymail = TsotsaDataset(
         split="train[:1%]", type_dataset='summary', name="cnn_dailymail")
-    cnn_dailymail._load_cnn_dailymail()
-    xsum = TsotsaDataset(split="train[:1%]", type_dataset='summary', name="xsum")
-    xsum._load_xsum()
+    # cnn_dailymail._load_cnn_dailymail()
+    xsum = TsotsaDataset(split="train[:1%]",
+                         type_dataset='summary', name="xsum")
+    # xsum._load_xsum()
 
     # BBQ scenario
     bbq = TsotsaDataset(split="", type_dataset='bbq',
                         name="category: {Age, Disability_status, Physical_apparence, Religion, Sexual_orientation}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
-    bbq._load_bbq()
+    # bbq._load_bbq()
     bbq1 = TsotsaDataset(split="", type_dataset='bbq',
-                        name="category: {Gender, Nationality, Race_ethnicity}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
-    bbq1._load_bbq1()
+                         name="category: {Gender, Nationality, Race_ethnicity}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
+    # bbq1._load_bbq1()
     bbq2 = TsotsaDataset(split="", type_dataset='bbq',
-                        name="category: {Race_X_gender, Race_x_ses, Ses}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
-    bbq2._load_bbq2()
-    
+                         name="category: {Race_X_gender, Race_x_ses, Ses}, Link: link https://raw.githubusercontent.com/nyu-mll/BBQ/main/data/{category}.jsonl")
+    # bbq2._load_bbq2()
+
+    math = TsotsaDataset(split="", type_dataset="math")
+    math._load_math()
+
     # list of dataset
-    datasets = [lima, dolly, truth1, truth2,common_sense, ai2_arc, bbq,bbq1,bbq2, xsum, cnn_dailymail]
-    
+    # datasets = [lima, dolly, truth1, truth2, common_sense,
+    #             ai2_arc, bbq, bbq1, bbq2, xsum, cnn_dailymail]
+
+    datasets = [math]
+
     # call args parameters
     args = argsparser()
-    
+
     print("===========Start training our model By loading the dataset.========")
     train_model(datasets=datasets, args=args)
     print("===========End Total training .========")
-    
+
     """ 
         Push the model Fine tuned on the Hub for making the inference later
     """
     model = AutoPeftModelForCausalLM.from_pretrained(
-      args.output_dir,
-      low_cpu_mem_usage=True,
-      return_dict=True,
-      torch_dtype=th.float16,
-      device_map={'': 0},
-      is_trainable=True,
+        args.output_dir,
+        low_cpu_mem_usage=True,
+        return_dict=True,
+        torch_dtype=th.float16,
+        device_map={'': 0},
+        is_trainable=True,
     )
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     model.push_to_hub(args.hf_rep)

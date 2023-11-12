@@ -16,6 +16,11 @@ from huggingface_hub import login
 from inference.models_utils import load_tokenizer, load_peft_model
 from dotenv import load_dotenv
 
+
+start_inference = time.time()
+
+print("=============Start inference time: ", start_inference)
+
 torch.set_float32_matmul_precision("high")
 
 
@@ -41,7 +46,7 @@ LLAMA2_CONTEXT_LENGTH = 4096
 async def process_request(input_data: ProcessRequest) -> ProcessResponse:
     if input_data.seed is not None:
         torch.manual_seed(input_data.seed)
-    prompt = 'Welcome in your virtual assistant!!!!!!!\n' + input_data.prompt
+    prompt = input_data.prompt
     encoded = tokenizer(prompt, return_tensors="pt")
 
     prompt_length = encoded["input_ids"][0].size(0)
@@ -53,6 +58,7 @@ async def process_request(input_data: ProcessRequest) -> ProcessResponse:
 
     t0 = time.perf_counter()
     encoded = {k: v.to("cuda") for k, v in encoded.items()}
+
     with torch.no_grad():
         outputs = model.generate(
             **encoded,
@@ -101,6 +107,23 @@ async def process_request(input_data: ProcessRequest) -> ProcessResponse:
             Token(text=tokenizer.decode(t), logprob=lp, top_logprob=token_tlp)
         )
     logprob_sum = gen_logprobs.sum().item()
+
+    input_ids = tokenizer(prompt, return_tensors="pt",
+                          truncation=True).input_ids.cuda()
+    # with torch.inference_mode():
+    with torch.no_grad():
+
+        outputs = model.generate(
+            input_ids=input_ids, max_new_tokens=100, do_sample=True, top_p=0.9, temperature=0.1)
+        # inference time
+        start_time = time.time()
+        outputs = model.generate(outputs)
+        end_time = time.time()
+        inference_time = end_time - start_time
+        print(f"Prompt:\n{prompt}\n")
+        print(
+            f"Generated instruction:\n{tokenizer.batch_decode(outputs.detach().cpu().numpy(), skip_special_tokens=True)[0][len(prompt):]}")
+        print("Temps d'inférence : {:.4f} secondes".format(inference_time))
 
     return ProcessResponse(
         text=output, tokens=generated_tokens, logprob=logprob_sum, request_time=t

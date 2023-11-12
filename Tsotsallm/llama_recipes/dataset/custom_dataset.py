@@ -8,6 +8,15 @@ path = f'{os.getcwd()}/data'
 # path = f'{os.getcwd()}/toy_submission/llama_recipes/data'
 
 
+def download_gmsk_file(path):
+    response = requests.get(
+        'https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/train.jsonl'
+    )
+    print(response.raise_for_status())
+    with open(f'{path}/gmsk.jsonl', "wb") as file:
+        file.write(response.content)
+
+
 def download_file(path_destination):
     categories = [
         "Age",
@@ -178,6 +187,36 @@ class TsotsaDataset:
         # print(self.dataset.columns)
         print("Size of dataset", len(self.dataset))
         return self.dataset
+
+    def _load_math(self):
+        for file in os.listdir(f'{path}'):
+            print(file)
+            if file.endswith(".jsonl"):
+                with jsonlines.open(f'{path}/{file}') as reader:
+                    for data in reader:
+                        self.dataset.append(data)
+
+        self.dataset = self.dataset[:10000]
+        # print(self.dataset.columns)
+        print("Size of dataset", len(self.dataset))
+        return self.dataset
+
+    """ 
+        formating function for math scenarion
+    """
+
+    def prepare_math_scenario(self, sample):
+        string = f"""
+        
+        Question:
+        {sample['question']}
+        
+        Answer:
+        {sample['answer']}
+        
+        """
+        print(string)
+        return string
 
     """ 
         formating function for each type of scenarios
