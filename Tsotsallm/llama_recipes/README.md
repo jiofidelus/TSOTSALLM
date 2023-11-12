@@ -29,9 +29,9 @@ docker run --gpus "device=0" --rm -ti tsotsallm_train
 The inference Docker is created and started with:
 
 ```bash
-docker build -f ./Dockerfile.inference -t tsotsallm_inference .
+docker build -f ./Dockerfile.inference -t tsotsallm_inf .
 
-docker run --gpus "device=0" -p 8080:80 --rm -ti tsotsallm_inference
+docker run --gpus "device=0" -p 8080:80 --rm -ti tsotsallm_inf
 ```
 
 To test the inference docker we can run this query:
