@@ -17,7 +17,7 @@ from inference.models_utils import load_tokenizer, load_peft_model
 from dotenv import load_dotenv
 
 
-start_inference = time.time()
+# start_inference = time.time()
 
 
 torch.set_float32_matmul_precision("high")
@@ -107,8 +107,8 @@ async def process_request(input_data: ProcessRequest) -> ProcessResponse:
         )
     logprob_sum = gen_logprobs.sum().item()
 
-    input_ids = tokenizer(prompt, return_tensors="pt",
-                          truncation=True).input_ids.cuda()
+    # input_ids = tokenizer(prompt, return_tensors="pt",
+    #   truncation=True).input_ids.cuda()
     # with torch.inference_mode():
     # with torch.no_grad():
 
