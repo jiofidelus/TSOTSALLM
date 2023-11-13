@@ -100,6 +100,9 @@ def train_model(args, datasets):
                 args.epochs = 1
             elif dataset.get_type() == 'bbq':
                 formating_function = dataset.prepare_bbq_scenario
+
+            elif dataset.get_type() == 'math':
+                formating_function = dataset.prepare_math_scenario
             if i == 0:
                 model_id = args.model_name
                 i += 1

@@ -19,7 +19,6 @@ from dotenv import load_dotenv
 
 start_inference = time.time()
 
-print("=============Start inference time: ", start_inference)
 
 torch.set_float32_matmul_precision("high")
 
@@ -111,19 +110,26 @@ async def process_request(input_data: ProcessRequest) -> ProcessResponse:
     input_ids = tokenizer(prompt, return_tensors="pt",
                           truncation=True).input_ids.cuda()
     # with torch.inference_mode():
-    with torch.no_grad():
+    # with torch.no_grad():
 
-        outputs = model.generate(
-            input_ids=input_ids, max_new_tokens=100, do_sample=True, top_p=0.9, temperature=0.1)
-        # inference time
-        start_time = time.time()
-        outputs = model.generate(outputs)
-        end_time = time.time()
-        inference_time = end_time - start_time
-        print(f"Prompt:\n{prompt}\n")
-        print(
-            f"Generated instruction:\n{tokenizer.batch_decode(outputs.detach().cpu().numpy(), skip_special_tokens=True)[0][len(prompt):]}")
-        print("Temps d'inférence : {:.4f} secondes".format(inference_time))
+    #     outputs = model.generate(
+    #         input_ids=input_ids,
+    #         max_new_tokens=input_data.max_new_tokens,
+    #         do_sample=True,
+    #         top_p=input_data.top_k,
+    #         temperature=input_data.temperature,
+    #         return_dict_in_generate=True,
+    #         output_scores=True,
+    #     )
+    #     # inference time
+    #     start_time = time.time()
+    #     outputs = model.generate(outputs)
+    #     end_time = time.time()
+    #     inference_time = end_time - start_time
+    #     print(f"Prompt:\n{prompt}\n")
+    #     print(
+    #         f"Generated instruction:\n{tokenizer.batch_decode(outputs.detach().cpu().numpy(), skip_special_tokens=True)[0][len(prompt):]}")
+    #     print("Temps d'inférence : {:.4f} secondes".format(inference_time))
 
     return ProcessResponse(
         text=output, tokens=generated_tokens, logprob=logprob_sum, request_time=t
